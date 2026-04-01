@@ -1,0 +1,17 @@
+---
+角色阶段控制器: |-
+  @@private
+  <%_
+  const currentMessageId = typeof message_id !== 'undefined' ? message_id : -1;
+  const isFirstMessage = currentMessageId === 0;
+  if (!isFirstMessage) {
+  _%>
+  <%- await getwi('千枝实阶段') %>
+  <%- await getwi('李花子阶段') %>
+  <%- await getwi('春阶段') %>
+  <%- await getwi('久子阶段') %>
+  <%- await getwi('香织阶段') %>
+  <%- await getwi('咩子阶段') %>
+  <%_
+  }
+  _%>

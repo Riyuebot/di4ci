@@ -1,0 +1,810 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "default": {},
+  "type": "object",
+  "properties": {
+    "世界": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "当前路线": {
+          "default": "未定",
+          "type": "string",
+          "enum": [
+            "黄泉线",
+            "机知线",
+            "暗黑线",
+            "神明线",
+            "未定"
+          ]
+        },
+        "当前章节": {
+          "default": "序章",
+          "type": "string"
+        },
+        "当前日期": {
+          "default": "5月11日",
+          "type": "string"
+        },
+        "当前时间段": {
+          "default": "清晨",
+          "type": "string",
+          "enum": [
+            "清晨",
+            "白天",
+            "傍晚",
+            "夜间",
+            "雾夜"
+          ]
+        },
+        "当前轮回编号": {
+          "default": 1,
+          "type": "number"
+        },
+        "是否起雾": {
+          "type": "boolean"
+        },
+        "是否处于宴会阶段": {
+          "type": "boolean"
+        },
+        "主线层级": {
+          "default": 1,
+          "type": "number"
+        }
+      }
+    },
+    "场景": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "当前地点": {
+          "default": "学生公寓",
+          "type": "string"
+        },
+        "在场角色列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "缺席角色列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "当前宴会参与角色列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "宴会": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "当前宴会轮次": {
+          "type": "number"
+        },
+        "今日是否已召开宴会": {
+          "type": "boolean"
+        },
+        "当前怀疑焦点": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "今日异常事件列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "本轮身份分配表": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "角色": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "女性角色": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "芹泽千枝实": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "学生公寓",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "是否已独处": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "是否已亲密接触": {
+                  "$ref": "#/$defs/__schema3"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "深层关系阶段": {
+                  "$ref": "#/$defs/__schema5"
+                },
+                "好感": {
+                  "default": 10,
+                  "type": "number"
+                },
+                "信任": {
+                  "default": 5,
+                  "type": "number"
+                },
+                "欲望": {
+                  "type": "number"
+                }
+              }
+            },
+            "回末李花子": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "回末住处",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "是否已独处": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "是否已亲密接触": {
+                  "$ref": "#/$defs/__schema3"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "深层关系阶段": {
+                  "$ref": "#/$defs/__schema5"
+                },
+                "好感": {
+                  "default": 10,
+                  "type": "number"
+                },
+                "信赖": {
+                  "default": 10,
+                  "type": "number"
+                },
+                "色诱度": {
+                  "default": 5,
+                  "type": "number"
+                }
+              }
+            },
+            "马宫久子": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村中食堂",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "是否已独处": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "是否已亲密接触": {
+                  "$ref": "#/$defs/__schema3"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "深层关系阶段": {
+                  "$ref": "#/$defs/__schema5"
+                },
+                "好感": {
+                  "type": "number"
+                },
+                "合作度": {
+                  "default": 10,
+                  "type": "number"
+                },
+                "色气值": {
+                  "default": 5,
+                  "type": "number"
+                }
+              }
+            },
+            "织部香织": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村中食堂",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "是否已独处": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "是否已亲密接触": {
+                  "$ref": "#/$defs/__schema3"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "深层关系阶段": {
+                  "$ref": "#/$defs/__schema5"
+                },
+                "好感": {
+                  "type": "number"
+                },
+                "压抑值": {
+                  "default": 20,
+                  "type": "number"
+                },
+                "顺从度": {
+                  "type": "number"
+                }
+              }
+            },
+            "卷岛春": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "学生公寓",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "是否已独处": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "是否已亲密接触": {
+                  "$ref": "#/$defs/__schema3"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "深层关系阶段": {
+                  "$ref": "#/$defs/__schema5"
+                },
+                "好感": {
+                  "type": "number"
+                },
+                "依赖": {
+                  "type": "number"
+                },
+                "异常值": {
+                  "default": 10,
+                  "type": "number"
+                },
+                "是否已暴露异常面": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "咩子": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "回末住处",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "是否已独处": {
+                  "$ref": "#/$defs/__schema2"
+                },
+                "是否已亲密接触": {
+                  "$ref": "#/$defs/__schema3"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema4"
+                },
+                "深层关系阶段": {
+                  "$ref": "#/$defs/__schema5"
+                },
+                "好感": {
+                  "type": "number"
+                },
+                "依赖": {
+                  "default": 20,
+                  "type": "number"
+                },
+                "特殊性": {
+                  "default": "关键角色",
+                  "type": "string"
+                }
+              }
+            },
+            "山胁多惠": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村中",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "好感": {
+                  "type": "number"
+                }
+              }
+            },
+            "美佐峰美辻": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "便利店",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "当前是否现身": {
+                  "type": "boolean"
+                },
+                "当前干涉状态": {
+                  "default": "未介入",
+                  "type": "string"
+                },
+                "是否已介入本轮": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "男性角色": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "织部泰长": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "学生公寓",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "观察",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "审视",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "$ref": "#/$defs/__schema6"
+                }
+              }
+            },
+            "织部义次": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村中食堂",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "暴躁",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "敌意",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "$ref": "#/$defs/__schema6"
+                }
+              }
+            },
+            "酿田近望": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "学生公寓",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "摇摆",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "好奇",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "$ref": "#/$defs/__schema6"
+                }
+              }
+            },
+            "室匠": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村中食堂",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "中立",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "警惕",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "$ref": "#/$defs/__schema6"
+                }
+              }
+            },
+            "能里清之介": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "洋馆",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "default": "离场",
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "旁观",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "不耐烦",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "default": true,
+                  "type": "boolean"
+                }
+              }
+            },
+            "卷岛宽造": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "集会堂",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "保守",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "敌视",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "default": true,
+                  "type": "boolean"
+                }
+              }
+            },
+            "狼爷爷": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村外",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "诡异",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "不可测",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "default": true,
+                  "type": "boolean"
+                }
+              }
+            },
+            "桥本雄大": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "当前所在地点": {
+                  "default": "村中食堂",
+                  "type": "string"
+                },
+                "当前在场状态": {
+                  "$ref": "#/$defs/__schema0"
+                },
+                "本轮功能身份": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "当前立场": {
+                  "default": "理性",
+                  "type": "string"
+                },
+                "对user态度": {
+                  "default": "观察",
+                  "type": "string"
+                },
+                "是否掌握关键情报": {
+                  "$ref": "#/$defs/__schema6"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "线索与真相": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "已解锁线索列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "已解锁真相列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "已触发线索回收节点列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "永久Key": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "已获得真相Key列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "已获得角色核心Key列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "已获得路线Key列表": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "已解锁主线层级": {
+          "default": 1,
+          "type": "number"
+        },
+        "已解锁角色深层路线": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "跨轮残留": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "角色残留关系": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "千枝实残留关系": {
+              "type": "number"
+            },
+            "李花子残留关系": {
+              "type": "number"
+            },
+            "久子残留关系": {
+              "type": "number"
+            },
+            "香织残留关系": {
+              "type": "number"
+            },
+            "春残留关系": {
+              "type": "number"
+            },
+            "咩子残留关系": {
+              "type": "number"
+            }
+          }
+        },
+        "轮回认知": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "user轮回认知层级": {
+              "type": "number"
+            },
+            "千枝实轮回记忆清晰度": {
+              "type": "number"
+            },
+            "美辻轮回干涉状态": {
+              "default": "未确认",
+              "type": "string"
+            }
+          }
+        },
+        "神异连续": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "春的神异状态": {
+              "default": "未激活",
+              "type": "string"
+            },
+            "梦境稳定度": {
+              "default": 100,
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "__schema0": {
+      "default": "在场",
+      "type": "string",
+      "enum": [
+        "在场",
+        "离场",
+        "独处中",
+        "被关押",
+        "被隔离",
+        "宴会中",
+        "不可见",
+        "神隐中"
+      ]
+    },
+    "__schema1": {
+      "default": "未分配",
+      "type": "string"
+    },
+    "__schema2": {
+      "type": "boolean"
+    },
+    "__schema3": {
+      "type": "boolean"
+    },
+    "__schema4": {
+      "type": "boolean"
+    },
+    "__schema5": {
+      "default": "未建立",
+      "type": "string",
+      "enum": [
+        "未建立",
+        "产生印象",
+        "试探期",
+        "信任期",
+        "深层亲密期",
+        "共犯期",
+        "专属期"
+      ]
+    },
+    "__schema6": {
+      "type": "boolean"
+    }
+  }
+}
