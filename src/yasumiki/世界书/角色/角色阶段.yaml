@@ -1,76 +1,51 @@
 ---
-休水角色阶段:
-  # :<%_
-  # const stat = getvar('stat_data', { defaults: {} });
-  # const keys = getvar('stat_data.永久Key.已获得真相Key列表', { defaults: [] });
-  # const roleKeys = getvar('stat_data.永久Key.已获得角色核心Key列表', { defaults: [] });
-  # const hasTrue = (key) => Array.isArray(keys) && keys.includes(key);
-  # const hasRole = (key) => Array.isArray(roleKeys) && roleKeys.includes(key);
-  # const female = _.get(stat, '角色.女性角色', {});
-  # const qianzhi = _.get(female, '芹泽千枝实', {});
-  # const lihuazi = _.get(female, '回末李花子', {});
-  # const chun = _.get(female, '卷岛春', {});
-  # const jiuzi = _.get(female, '马宫久子', {});
-  # const xiangzhi = _.get(female, '织部香织', {});
-  # const miezi = _.get(female, '咩子', {});
-  # _%>
-
+休水角色阶段: |-
+  <%_
+  const stat = getvar('stat_data', { defaults: {} });
+  const keys = getvar('stat_data.永久Key.已获得真相Key列表', { defaults: [] });
+  const roleKeys = getvar('stat_data.永久Key.已获得角色核心Key列表', { defaults: [] });
+  const hasTrue = key => Array.isArray(keys) && keys.includes(key);
+  const hasRole = key => Array.isArray(roleKeys) && roleKeys.includes(key);
+  const female = _.get(stat, '角色.女性角色', {});
+  const qianzhi = _.get(female, '芹泽千枝实', {});
+  const lihuazi = _.get(female, '回末李花子', {});
+  const chun = _.get(female, '卷岛春', {});
+  const jiuzi = _.get(female, '马宫久子', {});
+  const xiangzhi = _.get(female, '织部香织', {});
+  const miezi = _.get(female, '咩子', {});
+  _%>
   芹泽千枝实:
-    当前阶段: >-
-      <%_ if ((qianzhi.好感 ?? 0) < 20) { _%>表面照应<%_ }
-      else if ((qianzhi.好感 ?? 0) < 45) { _%>试探靠近<%_ }
-      else if (!hasTrue('千枝实轮回记忆确认') || !hasTrue('千枝实真实出身确认')) { _%>信任升温<%_ }
-      else { _%>深层失守<%_ } _%>
+    当前阶段: <%_ if ((qianzhi.好感 ?? 0) < 20) { _%>表面照应<%_ } else if ((qianzhi.好感 ?? 0) < 45) { _%>试探靠近<%_ } else if (!hasTrue('千枝实轮回记忆确认') || !hasTrue('千枝实真实出身确认')) { _%>信任升温<%_ } else { _%>深层失守<%_ } _%>
     说明:
       - 白天更轻快，夜里更容易显出疲惫、依赖和危险感
       - 只有确认轮回记忆与真实出身后，才允许进入最深层关系推进
 
   回末李花子:
-    当前阶段: >-
-      <%_ if ((lihuazi.好感 ?? 0) < 20) { _%>克制观察<%_ }
-      else if ((lihuazi.好感 ?? 0) < 45) { _%>温柔试探<%_ }
-      else if (!hasTrue('李花子净化本质确认') || !hasTrue('李花子梦境核心确认')) { _%>深信偏袒<%_ }
-      else { _%>秘仪失守<%_ } _%>
+    当前阶段: <%_ if ((lihuazi.好感 ?? 0) < 20) { _%>克制观察<%_ } else if ((lihuazi.好感 ?? 0) < 45) { _%>温柔试探<%_ } else if (!hasTrue('李花子净化本质确认') || !hasTrue('李花子梦境核心确认')) { _%>深信偏袒<%_ } else { _%>秘仪失守<%_ } _%>
     说明:
       - 她的推进不靠单纯好感，而要依赖净化与梦境真相层的解锁
       - 解锁后才允许进入秘仪感、私密偏爱和更深层绑定
 
   卷岛春:
-    当前阶段: >-
-      <%_ if ((chun.好感 ?? 0) < 20) { _%>戒备躲闪<%_ }
-      else if ((chun.好感 ?? 0) < 45) { _%>不安试探<%_ }
-      else if (!hasTrue('春异常面确认') || !hasTrue('貉关联确认')) { _%>黏连依赖<%_ }
-      else { _%>异常依附<%_ } _%>
+    当前阶段: <%_ if ((chun.好感 ?? 0) < 20) { _%>戒备躲闪<%_ } else if ((chun.好感 ?? 0) < 45) { _%>不安试探<%_ } else if (!hasTrue('春异常面确认') || !hasTrue('貉关联确认')) { _%>黏连依赖<%_ } else { _%>异常依附<%_ } _%>
     说明:
       - 春的深层推进必须建立在异常面与貉关联被确认之后
       - 在此之前只能写依赖加深，不能直接写最深层扭曲占有
 
   马宫久子:
-    当前阶段: >-
-      <%_ if ((jiuzi.好感 ?? 0) < 20) { _%>外来同盟<%_ }
-      else if ((jiuzi.好感 ?? 0) < 45) { _%>轻熟试探<%_ }
-      else if (!hasRole('久子核心解锁')) { _%>成熟靠近<%_ }
-      else { _%>轻熟失守<%_ } _%>
+    当前阶段: <%_ if ((jiuzi.好感 ?? 0) < 20) { _%>外来同盟<%_ } else if ((jiuzi.好感 ?? 0) < 45) { _%>轻熟试探<%_ } else if (!hasRole('久子核心解锁')) { _%>成熟靠近<%_ } else { _%>轻熟失守<%_ } _%>
     说明:
       - 久子的深层推进更多受角色线影响，不强依赖主线真相
       - 可作为轻熟路线和外来者亲近感的重要承接者
 
   织部香织:
-    当前阶段: >-
-      <%_ if ((xiangzhi.好感 ?? 0) < 20) { _%>客气照料<%_ }
-      else if ((xiangzhi.好感 ?? 0) < 45) { _%>柔和松动<%_ }
-      else if (!hasRole('香织核心解锁')) { _%>压抑依赖<%_ }
-      else { _%>轻熟失守<%_ } _%>
+    当前阶段: <%_ if ((xiangzhi.好感 ?? 0) < 20) { _%>客气照料<%_ } else if ((xiangzhi.好感 ?? 0) < 45) { _%>柔和松动<%_ } else if (!hasRole('香织核心解锁')) { _%>压抑依赖<%_ } else { _%>轻熟失守<%_ } _%>
     说明:
       - 香织的推进重点在压抑感、成熟感和禁忌感
       - 只有在角色线真正推进后，才允许进入更深层失守
 
   咩子:
-    当前阶段: >-
-      <%_ if ((miezi.依赖 ?? 0) < 20) { _%>迟疑靠近<%_ }
-      else if ((miezi.依赖 ?? 0) < 50) { _%>直觉依赖<%_ }
-      else if (!hasTrue('咩子钥匙位确认')) { _%>黏连信任<%_ }
-      else { _%>异常共振<%_ } _%>
+    当前阶段: <%_ if ((miezi.依赖 ?? 0) < 20) { _%>迟疑靠近<%_ } else if ((miezi.依赖 ?? 0) < 50) { _%>直觉依赖<%_ } else if (!hasTrue('咩子钥匙位确认')) { _%>黏连信任<%_ } else { _%>异常共振<%_ } _%>
     说明:
       - 咩子是钥匙位，不走普通恋爱推进
       - 重点是依赖、梦境联动和异常提示层逐步加深
