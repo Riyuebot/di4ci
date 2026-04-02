@@ -1,0 +1,60 @@
+---
+在场角色控制器: |-
+  @@private
+  <%_
+  const currentMessageId = typeof message_id !== 'undefined' ? message_id : -1;
+  const isFirstMessage = currentMessageId === 0;
+  const present = getvar('stat_data.场景.在场角色列表', { defaults: [] }) || [];
+  const banquet = getvar('stat_data.场景.当前宴会参与角色列表', { defaults: [] }) || [];
+  const names = Array.from(new Set([...present, ...banquet])).filter(Boolean);
+  const has = (...candidates) => candidates.some(name => names.includes(name));
+  if (!isFirstMessage) {
+  _%>
+  <%_ if (has('芹泽千枝实')) { _%>
+  <%- await getwi('芹泽千枝实') %>
+  <%_ } _%>
+  <%_ if (has('回末李花子')) { _%>
+  <%- await getwi('回末李花子') %>
+  <%_ } _%>
+  <%_ if (has('卷岛春')) { _%>
+  <%- await getwi('卷岛春') %>
+  <%_ } _%>
+  <%_ if (has('马宫久子')) { _%>
+  <%- await getwi('马宫久子') %>
+  <%_ } _%>
+  <%_ if (has('织部香织')) { _%>
+  <%- await getwi('织部香织') %>
+  <%_ } _%>
+  <%_ if (has('咩子')) { _%>
+  <%- await getwi('咩子') %>
+  <%_ } _%>
+  <%_ if (has('织部泰长')) { _%>
+  <%- await getwi('织部泰长') %>
+  <%_ } _%>
+  <%_ if (has('织部义次')) { _%>
+  <%- await getwi('织部义次') %>
+  <%_ } _%>
+  <%_ if (has('酿田近望')) { _%>
+  <%- await getwi('酿田近望') %>
+  <%_ } _%>
+  <%_ if (has('室匠')) { _%>
+  <%- await getwi('室匠') %>
+  <%_ } _%>
+  <%_ if (has('能里清之介')) { _%>
+  <%- await getwi('能里清之介') %>
+  <%_ } _%>
+  <%_ if (has('卷岛宽造')) { _%>
+  <%- await getwi('卷岛宽造') %>
+  <%_ } _%>
+  <%_ if (has('狼爷爷')) { _%>
+  <%- await getwi('狼爷爷') %>
+  <%_ } _%>
+  <%_ if (has('桥本雄大')) { _%>
+  <%- await getwi('桥本雄大') %>
+  <%_ } _%>
+  <%_ if (has('山胁多惠')) { _%>
+  <%- await getwi('山胁多惠') %>
+  <%_ } _%>
+  <%_
+  }
+  _%>
