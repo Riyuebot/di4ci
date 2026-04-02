@@ -139,8 +139,7 @@
                   <div v-if="!memoryPreview.length" class="memory-preview-empty">记忆的丝线尚未交织...</div>
                 </div>
                 <button class="memory-panel-footer" type="button" @click="activeTab = 'clues'">
-                  <span>追溯完整记忆</span>
-                  <span class="memory-panel-footer-arrow">→</span>
+                  <span class="memory-panel-footer-label">追溯完整记忆</span>
                 </button>
               </div>
             </div>
@@ -233,7 +232,7 @@
           </div>
         </section>
 
-        <section v-else class="panel-section clue-grid">
+        <section v-else-if="activeTab === 'clues'" class="panel-section clue-grid">
           <div class="info-card">
             <div class="card-title">已解锁线索</div>
             <div class="card-value">{{ clueCount }}</div>
@@ -273,6 +272,82 @@
             </div>
           </div>
         </section>
+
+        <section v-else class="panel-section scene-section">
+          <div class="section-head-row">
+            <h3 class="section-heading">
+              <span class="section-heading-mark section-heading-mark-danger"></span>
+              地缘情报
+            </h3>
+          </div>
+
+          <div class="scene-stack">
+            <div class="scene-current-card group-card-hover">
+              <div class="scene-pin scene-pin-danger">⌖</div>
+              <div class="scene-current-main">
+                <div class="scene-current-name">{{ scene.当前地点 || '未知地点' }}</div>
+                <div class="scene-current-subtitle">当前地缘坐标</div>
+              </div>
+            </div>
+
+            <div class="scene-grid">
+              <div class="scene-mini-card group-card-hover">
+                <div class="scene-mini-pin">⌖</div>
+                <div>
+                  <div class="scene-mini-name">皿永</div>
+                  <div class="scene-mini-note">黄泉通道</div>
+                </div>
+              </div>
+              <div class="scene-mini-card group-card-hover">
+                <div class="scene-mini-pin">⌖</div>
+                <div>
+                  <div class="scene-mini-name">休水村 · 食堂</div>
+                  <div class="scene-mini-note">生活区</div>
+                </div>
+              </div>
+              <div class="scene-mini-card group-card-hover">
+                <div class="scene-mini-pin">⌖</div>
+                <div>
+                  <div class="scene-mini-name">首吊松</div>
+                  <div class="scene-mini-note">墓地入口</div>
+                </div>
+              </div>
+              <div class="scene-mini-card group-card-hover">
+                <div class="scene-mini-pin">⌖</div>
+                <div>
+                  <div class="scene-mini-name">神社后山</div>
+                  <div class="scene-mini-note">禁忌之地</div>
+                </div>
+              </div>
+              <div class="scene-mini-card group-card-hover">
+                <div class="scene-mini-pin">⌖</div>
+                <div>
+                  <div class="scene-mini-name">洋馆</div>
+                  <div class="scene-mini-note">能里别馆</div>
+                </div>
+              </div>
+              <div class="scene-mini-card group-card-hover">
+                <div class="scene-mini-pin">⌖</div>
+                <div>
+                  <div class="scene-mini-name">集会堂</div>
+                  <div class="scene-mini-note">宴会场所</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scene-info-grid">
+              <div class="info-card wide">
+                <div class="card-title">宴会参与角色</div>
+                <div class="card-tags">
+                  <span v-for="name in feastList" :key="name" class="attribute-pill feast-pill">
+                    {{ name }}
+                  </span>
+                  <span v-if="!feastList.length" class="empty-text">暂无</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -282,7 +357,7 @@
 import { computed, ref } from 'vue';
 import { useDataStore } from './store';
 
-type TabId = 'overview' | 'present' | 'clues';
+type TabId = 'overview' | 'present' | 'clues' | 'scene';
 type Attribute = { label: string; value: string | number | boolean };
 type AnyCharacter = {
   name: string;
@@ -294,6 +369,7 @@ const tabs: { id: TabId; label: string; icon: string }[] = [
   { id: 'overview', label: '现世', icon: '〰' },
   { id: 'present', label: '众生', icon: '◌' },
   { id: 'clues', label: '记忆', icon: '↺' },
+  { id: 'scene', label: '地缘', icon: '⛃' },
 ];
 
 const activeTab = ref<TabId>('overview');
@@ -644,7 +720,7 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 
 .tab-bar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 20px;
   padding: 10px;
@@ -833,6 +909,7 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 126px;
   padding: 18px;
   border-radius: 24px;
   background: rgba(46, 33, 41, 0.6);
@@ -872,47 +949,200 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .memory-panel-footer {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  margin-top: 2px;
-  padding: 12px 4px 0;
-  border: 0;
-  border-top: 1px solid rgba(224, 90, 114, 0.12);
-  background: transparent;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: 34px;
+  margin-top: auto;
+  padding: 0 14px;
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.08);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   color: #d4af37;
   cursor: pointer;
   transition:
     color 0.2s ease,
     transform 0.2s ease,
-    text-shadow 0.2s ease;
+    text-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .memory-panel-footer:hover {
-  color: #f2c75a;
-  text-shadow: 0 0 12px rgba(212, 175, 55, 0.28);
-}
-
-.memory-panel-footer:hover .memory-panel-footer-arrow {
-  transform: translateX(4px);
+  color: #f6cf62;
+  background: rgba(212, 175, 55, 0.14);
+  border-color: rgba(212, 175, 55, 0.32);
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.24);
+  box-shadow: 0 10px 20px -16px rgba(212, 175, 55, 0.45);
 }
 
 .memory-panel-footer:active {
   transform: translateY(1px);
 }
 
-.memory-panel-footer-arrow {
-  font-size: 13px;
-  letter-spacing: 0;
-  transition: transform 0.2s ease;
+.memory-panel-footer-label {
+  line-height: 1;
 }
 
-.clue-grid {
+.scene-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.scene-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scene-current-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(224, 90, 114, 0.16);
+  background: rgba(46, 33, 41, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 30px -24px rgba(224, 90, 114, 0.18);
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.scene-current-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224, 90, 114, 0.24);
+  background: rgba(54, 38, 47, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 22px 36px -24px rgba(224, 90, 114, 0.3),
+    0 0 18px rgba(224, 90, 114, 0.08);
+}
+
+.scene-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: rgba(37, 27, 35, 0.9);
+  color: #b7a7b0;
+  font-size: 20px;
+  flex-shrink: 0;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    color 0.25s ease;
+}
+
+.scene-current-card:hover .scene-pin,
+.scene-mini-card:hover .scene-mini-pin {
+  transform: scale(1.05);
+}
+
+.scene-pin-danger {
+  color: #ef5c78;
+  box-shadow: 0 12px 22px -10px rgba(224, 90, 114, 0.45);
+}
+
+.scene-current-main {
+  min-width: 0;
+}
+
+.scene-current-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f8f4f6;
+  letter-spacing: 0.01em;
+}
+
+.scene-current-subtitle {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #a99aa3;
+}
+
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scene-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(34, 25, 33, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 14px 24px -22px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.scene-mini-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224, 90, 114, 0.18);
+  background: rgba(42, 30, 39, 0.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 28px -22px rgba(224, 90, 114, 0.22);
+}
+
+.scene-mini-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(42, 31, 40, 0.82);
+  color: #9f929a;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition:
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.scene-mini-card:hover .scene-mini-pin {
+  color: #e7dbe0;
+  box-shadow: 0 0 12px rgba(224, 90, 114, 0.12);
+}
+
+.scene-mini-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1eaed;
+}
+
+.scene-mini-note {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #9f9199;
+  letter-spacing: 0.12em;
+}
+
+.scene-info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -986,6 +1216,11 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   border-color: rgba(212, 175, 55, 0.2);
 }
 
+.feast-pill {
+  background: rgba(168, 121, 255, 0.14);
+  border-color: rgba(168, 121, 255, 0.22);
+}
+
 .character-grid.reference-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1009,10 +1244,31 @@ function getAttributes(char: AnyCharacter): Attribute[] {
     box-shadow 0.2s ease;
 }
 
+.character-reference-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224, 90, 114, 0.24);
+  background: rgba(56, 39, 48, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 30px -20px rgba(224, 90, 114, 0.36),
+    0 0 0 1px rgba(224, 90, 114, 0.06);
+}
+
+.character-reference-card:hover .character-reference-name {
+  color: #f8f4f6;
+}
+
+.character-reference-card:hover .character-avatar-badge {
+  box-shadow: 0 0 18px rgba(224, 90, 114, 0.18);
+}
+
 .character-reference-card.selected {
   border-color: rgba(224, 90, 114, 0.34);
   background: rgba(59, 37, 48, 0.72);
-  box-shadow: 0 12px 24px -16px rgba(224, 90, 114, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 12px 24px -16px rgba(224, 90, 114, 0.38),
+    0 0 22px rgba(224, 90, 114, 0.08);
 }
 
 .character-avatar-badge {
@@ -1074,8 +1330,13 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .absent-section {
-  padding-top: 2px;
+  padding: 16px 18px 4px;
   border-top: 1px solid rgba(224, 90, 114, 0.08);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(42, 30, 39, 0.54) 0%, rgba(31, 23, 31, 0.72) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 18px 32px -28px rgba(224, 90, 114, 0.24);
 }
 
 .section-head-row {
@@ -1083,12 +1344,14 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 4px 2px 6px;
 }
 
 .section-tip {
   font-size: 10px;
   color: #91838c;
   letter-spacing: 0.12em;
+  opacity: 0.9;
 }
 
 .section-heading-small {
@@ -1113,6 +1376,20 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   background: rgba(32, 24, 31, 0.62);
   color: #b8aab1;
   font-size: 12px;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.absent-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(224, 90, 114, 0.18);
+  background: rgba(47, 32, 41, 0.8);
+  color: #f2e8ec;
+  box-shadow: 0 12px 20px -18px rgba(224, 90, 114, 0.3);
 }
 
 .character-detail-overlay {
