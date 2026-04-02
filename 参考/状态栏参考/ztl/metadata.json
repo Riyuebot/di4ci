@@ -1,0 +1,5 @@
+{
+  "name": "休水民俗悬疑游戏状态栏",
+  "description": "为日式悬疑/民俗/时间循环文字游戏设计的嵌入式状态栏 UI，适配酒馆（SillyTavern）消息正文下方显示。",
+  "requestFramePermissions": []
+}

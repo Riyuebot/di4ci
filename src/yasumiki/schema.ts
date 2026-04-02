@@ -82,6 +82,18 @@ export const SchemaObject = z.object({
     })
     .prefault({}),
 
+  主角: z
+    .object({
+      当前所在地点: z.string().prefault('学生公寓'),
+      当前在场状态: 在场状态.prefault('在场'),
+      本轮功能身份: z.string().prefault('未分配'),
+      当前阵营: z.enum(['未知', '人类', '狼侧']).prefault('未知'),
+      当前状态: z.enum(['清醒', '睡梦中', '在场', '离场', '被关押']).prefault('清醒'),
+      是否完成宴前准备: z.boolean().prefault(false),
+      是否已知晓身份: z.boolean().prefault(false),
+    })
+    .prefault({}),
+
   角色: z
     .object({
       女性角色: z

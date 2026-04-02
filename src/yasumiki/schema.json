@@ -120,6 +120,49 @@
         }
       }
     },
+    "主角": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "当前所在地点": {
+          "default": "学生公寓",
+          "type": "string"
+        },
+        "当前在场状态": {
+          "$ref": "#/$defs/__schema0"
+        },
+        "本轮功能身份": {
+          "default": "未分配",
+          "type": "string"
+        },
+        "当前阵营": {
+          "default": "未知",
+          "type": "string",
+          "enum": [
+            "未知",
+            "人类",
+            "狼侧"
+          ]
+        },
+        "当前状态": {
+          "default": "清醒",
+          "type": "string",
+          "enum": [
+            "清醒",
+            "睡梦中",
+            "在场",
+            "离场",
+            "被关押"
+          ]
+        },
+        "是否完成宴前准备": {
+          "type": "boolean"
+        },
+        "是否已知晓身份": {
+          "type": "boolean"
+        }
+      }
+    },
     "角色": {
       "default": {},
       "type": "object",
