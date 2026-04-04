@@ -9,14 +9,7 @@
       "properties": {
         "当前路线": {
           "default": "未定",
-          "type": "string",
-          "enum": [
-            "黄泉线",
-            "机知线",
-            "暗黑线",
-            "神明线",
-            "未定"
-          ]
+          "type": "string"
         },
         "当前章节": {
           "default": "序章",
@@ -26,16 +19,13 @@
           "default": "5月11日",
           "type": "string"
         },
+        "当前时刻": {
+          "default": "09:00",
+          "type": "string"
+        },
         "当前时间段": {
           "default": "清晨",
-          "type": "string",
-          "enum": [
-            "清晨",
-            "白天",
-            "傍晚",
-            "夜间",
-            "雾夜"
-          ]
+          "type": "string"
         },
         "当前轮回编号": {
           "default": 1,
@@ -129,7 +119,8 @@
           "type": "string"
         },
         "当前在场状态": {
-          "$ref": "#/$defs/__schema0"
+          "default": "在场",
+          "type": "string"
         },
         "本轮功能身份": {
           "default": "未分配",
@@ -137,23 +128,11 @@
         },
         "当前阵营": {
           "default": "未知",
-          "type": "string",
-          "enum": [
-            "未知",
-            "人类",
-            "狼侧"
-          ]
+          "type": "string"
         },
         "当前状态": {
           "default": "清醒",
-          "type": "string",
-          "enum": [
-            "清醒",
-            "睡梦中",
-            "在场",
-            "离场",
-            "被关押"
-          ]
+          "type": "string"
         },
         "是否完成宴前准备": {
           "type": "boolean"
@@ -197,6 +176,9 @@
                 "深层关系阶段": {
                   "$ref": "#/$defs/__schema5"
                 },
+                "当前心里话": {
+                  "type": "string"
+                },
                 "好感": {
                   "default": 10,
                   "type": "number"
@@ -235,6 +217,9 @@
                 },
                 "深层关系阶段": {
                   "$ref": "#/$defs/__schema5"
+                },
+                "当前心里话": {
+                  "type": "string"
                 },
                 "好感": {
                   "default": 10,
@@ -276,6 +261,9 @@
                 "深层关系阶段": {
                   "$ref": "#/$defs/__schema5"
                 },
+                "当前心里话": {
+                  "type": "string"
+                },
                 "好感": {
                   "type": "number"
                 },
@@ -315,6 +303,9 @@
                 "深层关系阶段": {
                   "$ref": "#/$defs/__schema5"
                 },
+                "当前心里话": {
+                  "type": "string"
+                },
                 "好感": {
                   "type": "number"
                 },
@@ -352,6 +343,9 @@
                 },
                 "深层关系阶段": {
                   "$ref": "#/$defs/__schema5"
+                },
+                "当前心里话": {
+                  "type": "string"
                 },
                 "好感": {
                   "type": "number"
@@ -394,6 +388,9 @@
                 "深层关系阶段": {
                   "$ref": "#/$defs/__schema5"
                 },
+                "当前心里话": {
+                  "type": "string"
+                },
                 "好感": {
                   "type": "number"
                 },
@@ -416,13 +413,18 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "default": "在场",
+                  "type": "string"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "default": "未分配",
+                  "type": "string"
                 },
                 "好感": {
                   "type": "number"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -434,8 +436,12 @@
                   "default": "便利店",
                   "type": "string"
                 },
+                "当前心里话": {
+                  "type": "string"
+                },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "default": "在场",
+                  "type": "string"
                 },
                 "当前是否现身": {
                   "type": "boolean"
@@ -464,10 +470,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "观察",
@@ -478,7 +484,10 @@
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema8"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -491,10 +500,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "暴躁",
@@ -505,7 +514,10 @@
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema8"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -518,10 +530,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "摇摆",
@@ -532,7 +544,10 @@
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema8"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -545,10 +560,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "中立",
@@ -559,7 +574,10 @@
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema8"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -573,10 +591,10 @@
                 },
                 "当前在场状态": {
                   "default": "离场",
-                  "$ref": "#/$defs/__schema0"
+                  "type": "string"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "旁观",
@@ -589,6 +607,9 @@
                 "是否掌握关键情报": {
                   "default": true,
                   "type": "boolean"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -601,22 +622,25 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "保守",
                   "type": "string"
                 },
                 "对user态度": {
-                  "default": "敌视",
+                  "default": "敌意",
                   "type": "string"
                 },
                 "是否掌握关键情报": {
                   "default": true,
                   "type": "boolean"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -629,10 +653,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "诡异",
@@ -645,6 +669,9 @@
                 "是否掌握关键情报": {
                   "default": true,
                   "type": "boolean"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             },
@@ -657,10 +684,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "当前立场": {
                   "default": "理性",
@@ -671,7 +698,10 @@
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema8"
+                },
+                "当前心里话": {
+                  "type": "string"
                 }
               }
             }
@@ -808,17 +838,7 @@
   "$defs": {
     "__schema0": {
       "default": "在场",
-      "type": "string",
-      "enum": [
-        "在场",
-        "离场",
-        "独处中",
-        "被关押",
-        "被隔离",
-        "宴会中",
-        "不可见",
-        "神隐中"
-      ]
+      "type": "string"
     },
     "__schema1": {
       "default": "未分配",
@@ -835,18 +855,17 @@
     },
     "__schema5": {
       "default": "未建立",
-      "type": "string",
-      "enum": [
-        "未建立",
-        "产生印象",
-        "试探期",
-        "信任期",
-        "深层亲密期",
-        "共犯期",
-        "专属期"
-      ]
+      "type": "string"
     },
     "__schema6": {
+      "default": "在场",
+      "type": "string"
+    },
+    "__schema7": {
+      "default": "未分配",
+      "type": "string"
+    },
+    "__schema8": {
       "type": "boolean"
     }
   }

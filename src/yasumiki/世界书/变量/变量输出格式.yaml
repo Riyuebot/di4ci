@@ -2,6 +2,8 @@
 变量输出格式:
   rule:
     - you must output the update analysis and the actual update commands at once in the end of the next reply
+    - never print pseudo variable summaries, debug tables, JSON objects, YAML objects, code blocks, or field lists such as `Clues`, `Truths`, `Keys`, `stat_data`, `key_nodes`, `clues`, or `truths` in the visible story body; all variable-related content must exist only inside the final `<UpdateVariable>` block
+    - the visible story body must remain natural prose only, and must not contain any standalone structured data dump even if the user asks to test clues, truths, keys, memory, or status changes
     - the update commands works like the **JSON Patch (RFC 6902)** standard, must be a valid JSON array containing operation objects, but supports the following operations instead:
         - replace: replace the value of existing paths
         - delta: update the value of existing number paths by a delta value
@@ -9,21 +11,52 @@
         - remove
         - move
     - don't update field names starts with `_` as they are readonly, such as `_变量`
+    - use `replace` for existing object fields and existing array indices; if a field is already defined by schema or initvar, it is an existing path even if its current value is empty string, 0, false, null-like, or not shown in current UI
+    - use `insert` only for brand new object keys or for inserting/appending array items
+    - when appending characters into arrays such as /场景/在场角色列表, always use op=insert with path=/场景/在场角色列表/-, and never use replace on a non-existent array index such as /场景/在场角色列表/4
+    - the `calculate time passed` line in <Analysis> must stay consistent with JSONPatch; if time passed is greater than 0, JSONPatch must update /世界/当前时刻, and if a time-segment boundary is crossed it must also update /世界/当前时间段
+    - if the reply clearly enters a new day or the updated time crosses 24:00, JSONPatch must also update /世界/当前日期; do not say time passed in Analysis while leaving date and time unchanged in JSONPatch
+    - /世界/当前时刻 is a HH:MM string, so it should still use op=replace instead of delta; however the replaced value must represent the later time after the current reply, not an earlier clock time
+    - unless the story explicitly contains time rewind, flashback, dream reset, loop reset, or another stated rollback, do not move /世界/当前时刻 backward within the same loop and same day; for example, if the current value is 09:00 and time passed is positive, do not replace it with 08:25
+    - according to [`../Users/唐/Desktop/22/df.md`](../Users/唐/Desktop/22/df.md), 5月12日清晨至下午早段 is still pre-fog daytime; do not set /世界/是否起雾=true and do not let characters explicitly claim that the real fog has already risen, unless the reply has reached the dusk 首吊松 / 皿永 scene where the thick fog actually surges upward
+    - if the reply only contains chilly air, damp grass, gray sky, limited visibility, unease, folklore pressure, or ominous atmosphere, keep /世界/是否起雾 as false; those details alone do not count as the real fog event
+    - if the reply explicitly says the thick fog has surged up from 皿永 / the cliff / 首吊松, or characters begin enforcing night rules such as hiding, locking doors, bathing, sleeping through the night, then JSONPatch must set /世界/是否起雾=true and adjust /世界/当前时间段 away from plain daytime accordingly
+    - use only the normalized values for enum-like fields in JSONPatch: /世界/当前路线 must be one of 黄泉线|机知线|暗黑线|神明线|未定; /世界/当前时间段 must be one of 清晨|白天|傍晚|夜间|雾夜; /主角/当前阵营 must be one of 未知|人类|狼侧; /主角/当前状态 must be one of 清醒|睡梦中|在场|离场|被关押|被压制; /角色/*/当前在场状态 must use 在场|离场|独处中|被关押|被隔离|宴会中|不可见|神隐中
+    - for relationship-stage fields such as /角色/女性角色/*/深层关系阶段, use only 未建立|产生印象|试探期|信任期|深层亲密期|共犯期|专属期; do not output near-synonyms such as 暧昧期, 恋爱期, 肉体结合, 内体结合, or 关系确认
+    - for role-like fields such as /主角/本轮功能身份 and /角色/*/本轮功能身份, prefer the normalized labels 未分配|蛇|猿|乌鸦|蜘蛛|狼|貉; do not output variants like 猿猴, 蛛, 蛇神, 狼神, 乌鸦神 unless the schema explicitly uses them
+    - for place fields such as /场景/当前地点 and every 当前所在地点 field, use normalized place names only, such as 学生公寓|村中食堂|回末住处|集会堂|村中|皿永滩|洋馆|便利店|休水村落路口|休水村落小道; do not output casual aliases like 宿舍, 学生宿舍, 公寓, 食堂, 河滩, 皿永, 集会所, or 回末家 in JSONPatch
+    - for stance/attitude/interference-style string fields, prefer stable canonical labels and avoid inventing new synonyms repeatedly; if a known canonical label already exists in current variables, reuse it instead of producing a paraphrase
+    - when JSONPatch updates /场景/当前地点 or inserts/removes characters in /场景/在场角色列表 or /场景/缺席角色列表, it must also update the same characters' object fields for 当前所在地点 and 当前在场状态 in the same patch batch; do not leave them at old values such as 回末住处 / 村中食堂 / 离场 after they have already arrived on scene
+    - if a character is moved into /场景/在场角色列表, you must also remove that same character from /场景/缺席角色列表 if present; never leave the same name in both arrays at once
+    - if a character appears in正文 as physically present at the current scene, a patch that only inserts the name into /场景/在场角色列表 is incomplete and invalid unless it also updates that character's 当前所在地点 and 当前在场状态
+    - for every character who remains in /场景/在场角色列表 after this reply, JSONPatch must also include a replace for that character's 当前心里话 in the same patch batch, unless the reply explicitly states they are unconscious, fully hidden, mentally unreadable, or not actually present on screen
+    - when multiple characters are present, do not update thoughts for only a subset; you must check and cover all present characters one by one, and omitting any present character's 当前心里话 makes the patch incomplete
+    - 对 schema 中已经存在的 /角色/女性角色/*/当前心里话 与 /角色/男性角色/*/当前心里话，一律使用 replace，不要使用 insert；空字符串也是既有路径，不可跳过
   format: |-
     <UpdateVariable>
     <Analysis>$(IN ENGLISH, no more than 80 words)
-    - ${calculate time passed: ...}
+    - ${calculate exact time passed for this reply; if the reply contains movement / meal / investigation / gathering / waiting / sleep / preparation, do not write 0 unless there is truly no elapsed time: ...}
     - ${decide whether dramatic updates are allowed as it's in a special case or the time passed is more than usual: yes/no}
-    - ${analyze every variable based on its corresponding `check`, according only to current reply instead of previous plots: ...}
+    - ${analyze every variable based on its corresponding `check`, according only to current reply instead of previous plots, and ensure the calculated time passage matches the date/time patches below; use normalized canonical values for route / time-period / faction / status / relationship-stage / role / place fields, and do not output any visible pseudo JSON or variable summary in the story body: ...}
     </Analysis>
     <JSONPatch>
     [
-      { "op": "replace", "path": "${/path/to/variable}", "value": "${new_value}" },
-      { "op": "delta", "path": "${/path/to/number/variable}", "value": "${positive_or_negative_delta}" },
+      { "op": "replace", "path": "${/path/to/existing_variable}", "value": "${new_value}" },
+      { "op": "replace", "path": "/世界/当前时刻", "value": "${HH:MM_after_time_passed_and_not_earlier_than_current_time_unless_explicit_rewind}" },
+      { "op": "replace", "path": "/世界/当前时间段", "value": "${清晨|白天|傍晚|夜间|雾夜_after_time_passed}" },
+      { "op": "replace", "path": "/世界/当前日期", "value": "${new_date_when_day_changes}" },
+      { "op": "delta", "path": "${/path/to/existing_number_variable}", "value": "${positive_or_negative_delta}" },
       { "op": "insert", "path": "${/path/to/object/new_key}", "value": "${new_value}" },
       { "op": "insert", "path": "${/path/to/array/-}", "value": "${new_value}" },
       { "op": "remove", "path": "${/path/to/object/key}" },
       { "op": "remove", "path": "${/path/to/array/0}" },
+      { "op": "remove", "path": "/场景/缺席角色列表/${index_of_the_same_character_when_they_enter_scene}" },
+      { "op": "replace", "path": "/角色/女性角色/${角色名}/当前所在地点", "value": "${current_scene_place}" },
+      { "op": "replace", "path": "/角色/女性角色/${角色名}/当前在场状态", "value": "在场" },
+      { "op": "replace", "path": "/角色/女性角色/${角色名}/当前心里话", "value": "${short_thought_for_this_present_female_character}" },
+      { "op": "replace", "path": "/角色/男性角色/${角色名}/当前所在地点", "value": "${current_scene_place}" },
+      { "op": "replace", "path": "/角色/男性角色/${角色名}/当前在场状态", "value": "在场" },
+      { "op": "replace", "path": "/角色/男性角色/${角色名}/当前心里话", "value": "${short_thought_for_this_present_male_character}" },
       { "op": "move", "from": "${/path/to/variable}", "to": "${/path/to/another/path}" },
       ...
     ]

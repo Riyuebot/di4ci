@@ -1,6 +1,9 @@
 <template>
   <div class="status-shell">
     <div class="status-card">
+      <div class="status-ambience status-ambience-primary"></div>
+      <div class="status-ambience status-ambience-secondary"></div>
+      <div class="status-noise"></div>
       <header class="hero-bar">
         <div class="hero-side hero-side-left">
           <div class="micro-row">
@@ -12,6 +15,17 @@
             <span class="hero-route">{{ world.当前路线 || '未定路线' }}</span>
             <span class="hero-divider"></span>
             <span class="hero-loop">第 {{ world.当前轮回编号 || 1 }} 次轮回</span>
+            <span class="hero-divider"></span>
+            <span class="hero-loop">主线 {{ mainStoryLevel }}</span>
+          </div>
+          <div class="hero-inline-chips hero-inline-chips-left">
+            <span class="status-chip" :class="world.是否起雾 ? 'danger' : 'normal'">
+              {{ world.是否起雾 ? '起雾' : '未起雾' }}
+            </span>
+            <span class="status-chip" :class="world.是否处于宴会阶段 ? 'danger' : 'normal'">
+              {{ world.是否处于宴会阶段 ? '宴会中' : '非宴会中' }}
+            </span>
+            <span class="status-chip info">{{ scene.当前地点 || '未知地点' }}</span>
           </div>
         </div>
 
@@ -54,19 +68,15 @@
             <span class="micro-dot micro-dot-gold"></span>
           </div>
           <div class="hero-date">{{ world.当前日期 || '未知日期' }}</div>
-          <div class="hero-time">{{ world.当前时间段 || '未知时段' }}</div>
+          <div class="hero-time">{{ displayClock }}</div>
+          <div class="hero-inline-chips hero-inline-chips-right">
+            <span class="status-chip info">轮回认知 Lv.{{ loopAwarenessLevel }}</span>
+            <span class="status-chip" :class="dreamStabilityPercent <= 40 ? 'danger' : 'normal'">
+              梦境稳定度 {{ dreamStabilityPercent }}%
+            </span>
+          </div>
         </div>
       </header>
-
-      <div class="status-strip">
-        <span class="status-chip" :class="world.是否起雾 ? 'danger' : 'normal'">
-          {{ world.是否起雾 ? '起雾' : '未起雾' }}
-        </span>
-        <span class="status-chip" :class="world.是否处于宴会阶段 ? 'danger' : 'normal'">
-          {{ world.是否处于宴会阶段 ? '宴会中' : '非宴会中' }}
-        </span>
-        <span class="status-chip info">{{ scene.当前地点 || '未知地点' }}</span>
-      </div>
 
       <div v-if="!collapsed" class="panel-body">
         <nav class="tab-bar">
@@ -83,271 +93,387 @@
           </button>
         </nav>
 
-        <section v-if="activeTab === 'overview'" class="panel-section overview-section">
-          <div class="section-block">
-            <h3 class="section-heading">
-              <span class="section-heading-mark"></span>
-              自我认知
-            </h3>
-            <div class="identity-panel">
-              <div class="identity-card">
-                <span class="identity-label">加护</span>
-                <span class="identity-value">{{ identityBlessing }}</span>
-              </div>
-              <div class="identity-card">
-                <span class="identity-label">阵营</span>
-                <span class="identity-value identity-value-gold">{{ identityCamp }}</span>
-              </div>
-              <div class="identity-card">
-                <span class="identity-label">状态</span>
-                <span class="identity-value identity-value-danger">{{ identityStatus }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="overview-dual-grid">
+        <Transition name="panel-fade" mode="out-in">
+          <section v-if="activeTab === 'overview'" key="overview" class="panel-section overview-section">
             <div class="section-block">
               <h3 class="section-heading">
-                <span class="section-heading-mark section-heading-mark-danger"></span>
-                异象监测
+                <span class="section-heading-mark"></span>
+                自我认知
               </h3>
-              <div class="phenomenon-grid">
-                <div class="phenomenon-card" :class="world.是否起雾 ? 'active-danger' : ''">
-                  <div class="phenomenon-icon">☁</div>
-                  <div class="phenomenon-name">迷雾</div>
-                  <div class="phenomenon-note">{{ world.是否起雾 ? '幽冥之气 · 浓郁' : '暂无异动' }}</div>
+              <div class="identity-panel">
+                <div class="identity-card">
+                  <span class="identity-label">加护</span>
+                  <span class="identity-value">{{ identityBlessing }}</span>
                 </div>
-                <div class="phenomenon-card" :class="world.是否处于宴会阶段 ? 'active-gold' : ''">
-                  <div class="phenomenon-icon">🔥</div>
-                  <div class="phenomenon-name">祭祀</div>
-                  <div class="phenomenon-note">{{ world.是否处于宴会阶段 ? '宴会 · 进行中' : '尚未开启' }}</div>
+                <div class="identity-card">
+                  <span class="identity-label">阵营</span>
+                  <span class="identity-value identity-value-gold">{{ identityCamp }}</span>
+                </div>
+                <div class="identity-card">
+                  <span class="identity-label">状态</span>
+                  <span class="identity-value identity-value-danger">{{ identityStatus }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="section-block">
+            <div class="section-block overview-status-block">
               <h3 class="section-heading">
                 <span class="section-heading-mark section-heading-mark-gold"></span>
-                记忆残片
+                轮回与仪式
               </h3>
-              <div class="memory-panel">
-                <div class="memory-preview-list">
-                  <button v-for="item in memoryPreview" :key="item" type="button" class="memory-preview-chip">
-                    <span class="memory-preview-icon">◌</span>
-                    <span>{{ item }}</span>
-                  </button>
-                  <div v-if="!memoryPreview.length" class="memory-preview-empty">记忆的丝线尚未交织...</div>
+              <div class="overview-status-grid">
+                <div class="info-card">
+                  <div class="card-title">轮回认知</div>
+                  <div class="card-value">Lv.{{ loopAwarenessLevel }}</div>
                 </div>
-                <button class="memory-panel-footer" type="button" @click="activeTab = 'clues'">
-                  <span class="memory-panel-footer-label">追溯完整记忆</span>
+              </div>
+            </div>
+
+            <div class="overview-dual-grid">
+              <div class="section-block">
+                <h3 class="section-heading">
+                  <span class="section-heading-mark section-heading-mark-danger"></span>
+                  异象监测
+                </h3>
+                <div class="phenomenon-grid">
+                  <div class="phenomenon-card" :class="world.是否起雾 ? 'active-danger' : ''">
+                    <div class="phenomenon-icon">☁</div>
+                    <div class="phenomenon-name">迷雾</div>
+                    <div class="phenomenon-note">{{ world.是否起雾 ? '幽冥之气 · 浓郁' : '暂无异动' }}</div>
+                  </div>
+                  <div class="phenomenon-card" :class="world.是否处于宴会阶段 ? 'active-gold' : ''">
+                    <div class="phenomenon-icon">🔥</div>
+                    <div class="phenomenon-name">祭祀</div>
+                    <div class="phenomenon-note">{{ world.是否处于宴会阶段 ? '宴会 · 进行中' : '尚未开启' }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-block">
+                <h3 class="section-heading">
+                  <span class="section-heading-mark section-heading-mark-gold"></span>
+                  记忆残片
+                </h3>
+                <div class="memory-panel">
+                  <div class="memory-preview-list">
+                    <button v-for="item in memoryPreview" :key="item" type="button" class="memory-preview-chip">
+                      <span class="memory-preview-icon">◌</span>
+                      <span>{{ item }}</span>
+                    </button>
+                    <div v-if="!memoryPreview.length" class="memory-preview-empty">记忆的丝线尚未交织...</div>
+                  </div>
+                  <button class="memory-panel-footer" type="button" @click="activeTab = 'clues'">
+                    <span class="memory-panel-footer-label">追溯完整记忆</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section v-else-if="activeTab === 'present'" key="present" class="panel-section">
+            <div class="section-block">
+              <div class="section-head-row">
+                <h3 class="section-heading">
+                  <span class="section-heading-mark section-heading-mark-danger"></span>
+                  在场众生（{{ presentList.length }}）
+                </h3>
+                <span class="section-tip">点击凝视角色深处</span>
+              </div>
+
+              <div class="character-grid reference-grid">
+                <button
+                  v-for="char in presentList"
+                  :key="char.name"
+                  type="button"
+                  class="character-reference-card"
+                  :class="{
+                    selected: selectedCharacter?.name === char.name,
+                    'has-residual-aura': hasImportantResidualAura(char),
+                  }"
+                  @click="selectedCharacter = selectedCharacter?.name === char.name ? null : char"
+                >
+                  <div v-if="hasImportantResidualAura(char)" class="character-residual-badge">
+                    <span class="character-residual-badge-ring"></span>
+                    <span class="character-residual-badge-text">残响</span>
+                  </div>
+                  <div class="character-avatar-badge">{{ getAvatarText(char.name) }}</div>
+                  <div class="character-reference-main">
+                    <div class="character-reference-headline">
+                      <span class="character-reference-name">{{ char.name }}</span>
+                      <span class="character-reference-signal" :class="getSignalClass(char.detail)"></span>
+                    </div>
+                    <div class="character-reference-role">{{ getRoleText(char.detail) }}</div>
+                    <div class="character-reference-meta">
+                      <span>{{ getLocationText(char.detail) }}</span>
+                      <span class="character-reference-divider"></span>
+                      <span>{{ getPresenceText(char.detail) }}</span>
+                    </div>
+                    <div v-if="getLiveThought(char).trim()" class="character-reference-thought">
+                      “{{ getLiveThought(char) }}”
+                    </div>
+                  </div>
                 </button>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section v-else-if="activeTab === 'present'" class="panel-section">
-          <div class="section-block">
+            <div v-if="absentList.length" class="section-block absent-section">
+              <h3 class="section-heading section-heading-small">
+                <span class="section-heading-mark section-heading-mark-muted"></span>
+                离散者（{{ absentList.length }}）
+              </h3>
+              <div class="absent-chip-list">
+                <button
+                  v-for="char in absentList"
+                  :key="char.name"
+                  type="button"
+                  class="absent-chip"
+                  @click="selectedCharacter = selectedCharacter?.name === char.name ? null : char"
+                >
+                  {{ char.name }}
+                </button>
+              </div>
+            </div>
+
+            <div v-if="selectedCharacter" class="character-detail-overlay" @click="selectedCharacter = null">
+              <div class="character-detail-modal" @click.stop>
+                <button class="detail-close" type="button" aria-label="关闭角色详情" @click="selectedCharacter = null">
+                  ×
+                </button>
+                <div class="detail-modal-body">
+                  <div class="detail-modal-hero">
+                    <div class="detail-modal-hero-glow"></div>
+                    <div class="detail-modal-avatar detail-modal-avatar-large">
+                      {{ getAvatarText(selectedCharacter.name) }}
+                    </div>
+                    <div class="detail-modal-hero-copy">
+                      <div class="detail-flag">角色启示</div>
+                      <div class="detail-title">{{ selectedCharacter.name }}</div>
+                      <div class="detail-subtitle">
+                        <span>{{ getRoleText(selectedCharacter.detail) }}</span>
+                        <span class="detail-subtitle-divider"></span>
+                        <span>{{ getPresenceText(selectedCharacter.detail) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="hasImportantResidualAura(selectedCharacter)" class="detail-resonance-banner">
+                    <span class="detail-resonance-label">残留共鸣</span>
+                    <span class="detail-resonance-value">{{ getResidualRelationValue(selectedCharacter.name) }}</span>
+                  </div>
+
+                  <div class="detail-role-banner">所在地点：{{ getLocationText(selectedCharacter.detail) }}</div>
+
+                  <div v-if="selectedCharacter.name === '卷岛春'" class="detail-extra-pills">
+                    <span class="attribute-pill key-pill">春的神异：{{ springMysticState }}</span>
+                  </div>
+
+                  <div v-if="getResidualRelationValue(selectedCharacter.name) !== null" class="detail-residual-card">
+                    <div class="detail-residual-title">跨轮残留关系</div>
+                    <div class="detail-residual-value">{{ getResidualRelationValue(selectedCharacter.name) }}</div>
+                  </div>
+
+                  <div class="detail-quote">“{{ getCharacterThought(selectedCharacter) }}”</div>
+
+                  <div class="detail-grid reference-detail-grid">
+                    <div class="detail-item">
+                      <span class="detail-label">在场状态</span>
+                      <span class="detail-value">{{ getPresenceText(selectedCharacter.detail) }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">所在地点</span>
+                      <span class="detail-value">{{ getLocationText(selectedCharacter.detail) }}</span>
+                    </div>
+                    <div
+                      v-for="attribute in getAttributes(selectedCharacter)"
+                      :key="attribute.label"
+                      class="detail-item"
+                    >
+                      <span class="detail-label">{{ attribute.label }}</span>
+                      <span class="detail-value">{{ attribute.value }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section v-else-if="activeTab === 'clues'" key="clues" class="panel-section clue-grid">
+            <div class="info-card">
+              <div class="card-title">已解锁线索</div>
+              <div class="card-value">{{ clueCount }}</div>
+            </div>
+            <div class="info-card">
+              <div class="card-title">已解锁真相</div>
+              <div class="card-value">{{ truthCount }}</div>
+            </div>
+            <div class="info-card">
+              <div class="card-title">主线层级</div>
+              <div class="card-value">{{ mainStoryLevel }}</div>
+            </div>
+            <div class="info-card">
+              <div class="card-title">深层路线</div>
+              <div class="card-value">{{ deepRouteCount }}</div>
+            </div>
+            <div class="info-card wide">
+              <div class="card-title">线索回收节点</div>
+              <div class="card-tags">
+                <span v-for="node in recallNodes" :key="node" class="attribute-pill">
+                  {{ node }}
+                </span>
+                <span v-if="!recallNodes.length" class="empty-text">暂无</span>
+              </div>
+            </div>
+            <div class="info-card wide key-card">
+              <div class="card-title">关键剧情 Key</div>
+              <div class="key-section">
+                <div class="key-subtitle">角色核心 Key</div>
+                <div class="card-tags">
+                  <span v-for="key in roleKeys" :key="key" class="attribute-pill key-pill">
+                    {{ key }}
+                  </span>
+                  <span v-if="!roleKeys.length" class="empty-text">暂无</span>
+                </div>
+              </div>
+              <div class="key-section">
+                <div class="key-subtitle">路线 / 真相 Key</div>
+                <div class="card-tags">
+                  <span v-for="key in routeAndTruthKeys" :key="key" class="attribute-pill truth-pill">
+                    {{ key }}
+                  </span>
+                  <span v-if="!routeAndTruthKeys.length" class="empty-text">暂无</span>
+                </div>
+              </div>
+            </div>
+            <div class="info-card wide">
+              <div class="card-title">已解锁角色深层路线</div>
+              <div class="card-tags">
+                <span v-for="route in deepRoutes" :key="route" class="attribute-pill gold-pill">
+                  {{ route }}
+                </span>
+                <span v-if="!deepRoutes.length" class="empty-text">暂无</span>
+              </div>
+            </div>
+          </section>
+
+          <section v-else key="scene" class="panel-section scene-section">
             <div class="section-head-row">
               <h3 class="section-heading">
                 <span class="section-heading-mark section-heading-mark-danger"></span>
-                在场众生（{{ presentList.length }}）
+                地缘情报
               </h3>
-              <span class="section-tip">点击凝视角色深处</span>
             </div>
 
-            <div class="character-grid reference-grid">
-              <button
-                v-for="char in presentList"
-                :key="char.name"
-                type="button"
-                class="character-reference-card"
-                :class="{ selected: selectedCharacter?.name === char.name }"
-                @click="selectedCharacter = selectedCharacter?.name === char.name ? null : char"
-              >
-                <div class="character-avatar-badge">{{ getAvatarText(char.name) }}</div>
-                <div class="character-reference-main">
-                  <div class="character-reference-headline">
-                    <span class="character-reference-name">{{ char.name }}</span>
-                    <span class="character-reference-signal" :class="getSignalClass(char.detail)"></span>
-                  </div>
-                  <div class="character-reference-role">{{ getRoleText(char.detail) }}</div>
+            <div class="scene-stack">
+              <div class="scene-current-card group-card-hover">
+                <div class="scene-pin scene-pin-danger">⌖</div>
+                <div class="scene-current-main">
+                  <div class="scene-current-name">{{ scene.当前地点 || '未知地点' }}</div>
+                  <div class="scene-current-subtitle">当前地缘坐标</div>
                 </div>
-              </button>
-            </div>
-          </div>
+              </div>
 
-          <div v-if="absentList.length" class="section-block absent-section">
-            <h3 class="section-heading section-heading-small">
-              <span class="section-heading-mark section-heading-mark-muted"></span>
-              离散者（{{ absentList.length }}）
-            </h3>
-            <div class="absent-chip-list">
-              <button
-                v-for="char in absentList"
-                :key="char.name"
-                type="button"
-                class="absent-chip"
-                @click="selectedCharacter = selectedCharacter?.name === char.name ? null : char"
-              >
-                {{ char.name }}
-              </button>
-            </div>
-          </div>
-
-          <div v-if="selectedCharacter" class="character-detail-overlay" @click="selectedCharacter = null">
-            <div class="character-detail-modal" @click.stop>
-              <button class="detail-close" type="button" aria-label="关闭角色详情" @click="selectedCharacter = null">
-                ×
-              </button>
-              <div class="detail-modal-body">
-                <div class="detail-modal-header">
-                  <div class="detail-modal-avatar">{{ getAvatarText(selectedCharacter.name) }}</div>
+              <div class="scene-grid">
+                <div class="scene-mini-card group-card-hover">
+                  <div class="scene-mini-pin">⌖</div>
                   <div>
-                    <div class="detail-flag">角色启示</div>
-                    <div class="detail-title">{{ selectedCharacter.name }}</div>
+                    <div class="scene-mini-name">皿永</div>
+                    <div class="scene-mini-note">黄泉通道</div>
                   </div>
                 </div>
-
-                <div class="detail-role-banner">身份：{{ getRoleText(selectedCharacter.detail) }}</div>
-
-                <div class="detail-quote">“{{ getCharacterQuote(selectedCharacter) }}”</div>
-
-                <div class="detail-grid reference-detail-grid">
-                  <div class="detail-item">
-                    <span class="detail-label">在场状态</span>
-                    <span class="detail-value">{{ getPresenceText(selectedCharacter.detail) }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="detail-label">所在地点</span>
-                    <span class="detail-value">{{ getLocationText(selectedCharacter.detail) }}</span>
-                  </div>
-                  <div v-for="attribute in getAttributes(selectedCharacter)" :key="attribute.label" class="detail-item">
-                    <span class="detail-label">{{ attribute.label }}</span>
-                    <span class="detail-value">{{ attribute.value }}</span>
+                <div class="scene-mini-card group-card-hover">
+                  <div class="scene-mini-pin">⌖</div>
+                  <div>
+                    <div class="scene-mini-name">休水村 · 食堂</div>
+                    <div class="scene-mini-note">生活区</div>
                   </div>
                 </div>
+                <div class="scene-mini-card group-card-hover">
+                  <div class="scene-mini-pin">⌖</div>
+                  <div>
+                    <div class="scene-mini-name">首吊松</div>
+                    <div class="scene-mini-note">墓地入口</div>
+                  </div>
+                </div>
+                <div class="scene-mini-card group-card-hover">
+                  <div class="scene-mini-pin">⌖</div>
+                  <div>
+                    <div class="scene-mini-name">神社后山</div>
+                    <div class="scene-mini-note">禁忌之地</div>
+                  </div>
+                </div>
+                <div class="scene-mini-card group-card-hover">
+                  <div class="scene-mini-pin">⌖</div>
+                  <div>
+                    <div class="scene-mini-name">洋馆</div>
+                    <div class="scene-mini-note">能里别馆</div>
+                  </div>
+                </div>
+                <div class="scene-mini-card group-card-hover">
+                  <div class="scene-mini-pin">⌖</div>
+                  <div>
+                    <div class="scene-mini-name">集会堂</div>
+                    <div class="scene-mini-note">宴会场所</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <section v-else-if="activeTab === 'clues'" class="panel-section clue-grid">
-          <div class="info-card">
-            <div class="card-title">已解锁线索</div>
-            <div class="card-value">{{ clueCount }}</div>
-          </div>
-          <div class="info-card">
-            <div class="card-title">已解锁真相</div>
-            <div class="card-value">{{ truthCount }}</div>
-          </div>
-          <div class="info-card wide">
-            <div class="card-title">线索回收节点</div>
-            <div class="card-tags">
-              <span v-for="node in recallNodes" :key="node" class="attribute-pill">
-                {{ node }}
-              </span>
-              <span v-if="!recallNodes.length" class="empty-text">暂无</span>
-            </div>
-          </div>
-          <div class="info-card wide key-card">
-            <div class="card-title">关键剧情 Key</div>
-            <div class="key-section">
-              <div class="key-subtitle">角色核心 Key</div>
-              <div class="card-tags">
-                <span v-for="key in roleKeys" :key="key" class="attribute-pill key-pill">
-                  {{ key }}
-                </span>
-                <span v-if="!roleKeys.length" class="empty-text">暂无</span>
-              </div>
-            </div>
-            <div class="key-section">
-              <div class="key-subtitle">路线 / 真相 Key</div>
-              <div class="card-tags">
-                <span v-for="key in routeAndTruthKeys" :key="key" class="attribute-pill truth-pill">
-                  {{ key }}
-                </span>
-                <span v-if="!routeAndTruthKeys.length" class="empty-text">暂无</span>
-              </div>
-            </div>
-          </div>
-        </section>
+              <div class="scene-info-grid">
+                <div class="info-card wide">
+                  <div class="card-title">宴会情报</div>
+                  <div class="card-tags">
+                    <span class="attribute-pill gold-pill">轮次 {{ banquetRound }}</span>
+                    <span class="attribute-pill" :class="banquetOpenedToday ? 'truth-pill' : 'key-pill'">
+                      {{ banquetOpenedToday ? '今日已召开' : '今日未召开' }}
+                    </span>
+                  </div>
 
-        <section v-else class="panel-section scene-section">
-          <div class="section-head-row">
-            <h3 class="section-heading">
-              <span class="section-heading-mark section-heading-mark-danger"></span>
-              地缘情报
-            </h3>
-          </div>
+                  <div v-if="feastList.length" class="key-section">
+                    <div class="key-subtitle">参与角色</div>
+                    <div class="card-tags">
+                      <span v-for="name in feastList" :key="name" class="attribute-pill feast-pill">
+                        {{ name }}
+                      </span>
+                    </div>
+                  </div>
 
-          <div class="scene-stack">
-            <div class="scene-current-card group-card-hover">
-              <div class="scene-pin scene-pin-danger">⌖</div>
-              <div class="scene-current-main">
-                <div class="scene-current-name">{{ scene.当前地点 || '未知地点' }}</div>
-                <div class="scene-current-subtitle">当前地缘坐标</div>
-              </div>
-            </div>
+                  <div v-if="suspicionList.length" class="key-section">
+                    <div class="key-subtitle">怀疑焦点</div>
+                    <div class="card-tags">
+                      <span v-for="name in suspicionList" :key="name" class="attribute-pill key-pill">
+                        {{ name }}
+                      </span>
+                    </div>
+                  </div>
 
-            <div class="scene-grid">
-              <div class="scene-mini-card group-card-hover">
-                <div class="scene-mini-pin">⌖</div>
-                <div>
-                  <div class="scene-mini-name">皿永</div>
-                  <div class="scene-mini-note">黄泉通道</div>
-                </div>
-              </div>
-              <div class="scene-mini-card group-card-hover">
-                <div class="scene-mini-pin">⌖</div>
-                <div>
-                  <div class="scene-mini-name">休水村 · 食堂</div>
-                  <div class="scene-mini-note">生活区</div>
-                </div>
-              </div>
-              <div class="scene-mini-card group-card-hover">
-                <div class="scene-mini-pin">⌖</div>
-                <div>
-                  <div class="scene-mini-name">首吊松</div>
-                  <div class="scene-mini-note">墓地入口</div>
-                </div>
-              </div>
-              <div class="scene-mini-card group-card-hover">
-                <div class="scene-mini-pin">⌖</div>
-                <div>
-                  <div class="scene-mini-name">神社后山</div>
-                  <div class="scene-mini-note">禁忌之地</div>
-                </div>
-              </div>
-              <div class="scene-mini-card group-card-hover">
-                <div class="scene-mini-pin">⌖</div>
-                <div>
-                  <div class="scene-mini-name">洋馆</div>
-                  <div class="scene-mini-note">能里别馆</div>
-                </div>
-              </div>
-              <div class="scene-mini-card group-card-hover">
-                <div class="scene-mini-pin">⌖</div>
-                <div>
-                  <div class="scene-mini-name">集会堂</div>
-                  <div class="scene-mini-note">宴会场所</div>
+                  <div v-if="anomalyList.length" class="key-section">
+                    <div class="key-subtitle">今日异常事件</div>
+                    <div class="card-tags">
+                      <span v-for="event in anomalyList" :key="event" class="attribute-pill truth-pill">
+                        {{ event }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div v-if="identityAssignments.length" class="key-section">
+                    <div class="key-subtitle">本轮身份分配</div>
+                    <div class="card-tags">
+                      <span v-for="item in identityAssignments" :key="item.label" class="attribute-pill">
+                        {{ item.label }}：{{ item.value }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="!feastList.length && !suspicionList.length && !anomalyList.length && !identityAssignments.length"
+                    class="empty-text"
+                  >
+                    当前尚无额外宴会信息
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div class="scene-info-grid">
-              <div class="info-card wide">
-                <div class="card-title">宴会参与角色</div>
-                <div class="card-tags">
-                  <span v-for="name in feastList" :key="name" class="attribute-pill feast-pill">
-                    {{ name }}
-                  </span>
-                  <span v-if="!feastList.length" class="empty-text">暂无</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        </Transition>
       </div>
     </div>
   </div>
@@ -379,22 +505,31 @@ const selectedCharacter = ref<AnyCharacter | null>(null);
 const store = useDataStore();
 const world = computed(() => store.world ?? {});
 const scene = computed(() => store.scene ?? {});
+const banquet = computed(() => store.banquet ?? {});
 const clues = computed(() => store.clues ?? {});
-const protagonist = computed(
-  () => _.get(store.data, 'value.主角', _.get(store.data, '主角', {})) as Record<string, any>,
-);
+const permanentKeys = computed(() => store.permanentKeys ?? {});
+const crossLoop = computed(() => store.crossLoop ?? {});
+const displayClock = computed(() => {
+  const phase = _.get(world.value, '当前时间段', '未知时段');
+  const time = _.get(world.value, '当前时刻', '??:??');
+  return `${time} · ${phase}`;
+});
+const protagonist = computed(() => store.protagonist ?? ({} as Record<string, any>));
 const presentList = computed<AnyCharacter[]>(() => store.presentCharacters ?? []);
 const absentList = computed<AnyCharacter[]>(() => store.absentCharacters ?? []);
 const feastList = computed<string[]>(() => _.get(scene.value, '当前宴会参与角色列表', []));
 const clueCount = computed(() => (_.get(clues.value, '已解锁线索列表', []) as string[]).length);
 const truthCount = computed(() => (_.get(clues.value, '已解锁真相列表', []) as string[]).length);
 const recallNodes = computed(() => _.get(clues.value, '已触发线索回收节点列表', []) as string[]);
-const roleKeys = computed(() => _.get(store.data, 'value.永久Key.已获得角色核心Key列表', []) as string[]);
+const roleKeys = computed(() => _.get(permanentKeys.value, '已获得角色核心Key列表', []) as string[]);
 const routeAndTruthKeys = computed(() => {
-  const routeKeys = _.get(store.data, 'value.永久Key.已获得路线Key列表', []) as string[];
-  const truthKeys = _.get(store.data, 'value.永久Key.已获得真相Key列表', []) as string[];
+  const routeKeys = _.get(permanentKeys.value, '已获得路线Key列表', []) as string[];
+  const truthKeys = _.get(permanentKeys.value, '已获得真相Key列表', []) as string[];
   return [...routeKeys, ...truthKeys];
 });
+const deepRoutes = computed(() => _.get(permanentKeys.value, '已解锁角色深层路线', []) as string[]);
+const deepRouteCount = computed(() => deepRoutes.value.length);
+const mainStoryLevel = computed(() => _.get(permanentKeys.value, '已解锁主线层级', _.get(world.value, '主线层级', 1)));
 const memoryPreview = computed(() => {
   const cluesList = (_.get(clues.value, '已解锁线索列表', []) as string[]).slice(0, 2);
   const truthList = (_.get(clues.value, '已解锁真相列表', []) as string[]).slice(0, 2);
@@ -403,6 +538,40 @@ const memoryPreview = computed(() => {
 const identityBlessing = computed(() => _.get(protagonist.value, '本轮功能身份', '未分配'));
 const identityCamp = computed(() => _.get(protagonist.value, '当前阵营', '未知'));
 const identityStatus = computed(() => _.get(protagonist.value, '当前状态', '清醒'));
+const loopAwarenessLevel = computed(() => _.get(crossLoop.value, '轮回认知.user轮回认知层级', 0));
+const dreamStabilityPercent = computed(() => _.get(crossLoop.value, '神异连续.梦境稳定度', 100));
+const springMysticState = computed(() => _.get(crossLoop.value, '神异连续.春的神异状态', '未激活'));
+const mitsujiInterferenceText = computed(() => _.get(crossLoop.value, '轮回认知.美辻轮回干涉状态', '未确认'));
+function getResidualRelationValue(name: string) {
+  const map: Record<string, number | null> = {
+    芹泽千枝实: _.get(crossLoop.value, '角色残留关系.千枝实残留关系', 0),
+    回末李花子: _.get(crossLoop.value, '角色残留关系.李花子残留关系', 0),
+    马宫久子: _.get(crossLoop.value, '角色残留关系.久子残留关系', 0),
+    织部香织: _.get(crossLoop.value, '角色残留关系.香织残留关系', 0),
+    卷岛春: _.get(crossLoop.value, '角色残留关系.春残留关系', 0),
+    咩子: _.get(crossLoop.value, '角色残留关系.咩子残留关系', 0),
+  };
+  return _.has(map, name) ? map[name] : null;
+}
+const residualRelationList = computed(() => {
+  const data = _.get(crossLoop.value, '角色残留关系', {}) as Record<string, number>;
+  return [
+    { label: '千枝实', value: _.get(data, '千枝实残留关系', 0) },
+    { label: '李花子', value: _.get(data, '李花子残留关系', 0) },
+    { label: '久子', value: _.get(data, '久子残留关系', 0) },
+    { label: '香织', value: _.get(data, '香织残留关系', 0) },
+    { label: '春', value: _.get(data, '春残留关系', 0) },
+    { label: '咩子', value: _.get(data, '咩子残留关系', 0) },
+  ];
+});
+const banquetRound = computed(() => _.get(banquet.value, '当前宴会轮次', 0));
+const banquetOpenedToday = computed(() => _.get(banquet.value, '今日是否已召开宴会', false));
+const suspicionList = computed(() => _.get(banquet.value, '当前怀疑焦点', []) as string[]);
+const anomalyList = computed(() => _.get(banquet.value, '今日异常事件列表', []) as string[]);
+const identityAssignments = computed(() => {
+  const record = _.get(banquet.value, '本轮身份分配表', {}) as Record<string, string>;
+  return Object.entries(record).map(([label, value]) => ({ label, value }));
+});
 
 function getPresenceText(detail: Record<string, any>) {
   return detail.当前在场状态 ?? '未知';
@@ -420,6 +589,13 @@ function getAvatarText(name: string) {
   return name.slice(0, 1);
 }
 
+function hasImportantResidualAura(char: AnyCharacter | null) {
+  if (!char) return false;
+  if (char.type !== 'female') return false;
+  const value = getResidualRelationValue(char.name);
+  return value !== null && value > 0;
+}
+
 function getSignalClass(detail: Record<string, any>) {
   const status = getPresenceText(detail);
   if (status === '被隔离' || status === '被关押' || status === '神隐中') return 'warning';
@@ -427,11 +603,18 @@ function getSignalClass(detail: Record<string, any>) {
   return 'danger';
 }
 
-function getCharacterQuote(char: AnyCharacter) {
+function getLiveThought(char: AnyCharacter) {
+  return (_.get(char.detail, '当前心里话', '') as string).trim();
+}
+
+function getCharacterThought(char: AnyCharacter) {
+  const thought = getLiveThought(char);
+  if (thought) return thought;
+
   if (char.type === 'female') {
-    return `${char.name} 的气息压得很近，像是把什么没说出口的话一直含在舌尖。`;
+    return '……先别急着开口。再看一眼。';
   }
-  return `${char.name} 看上去还算镇定，但局里的风向显然不会让人真正安心。`;
+  return '先记住眼前的事，别太早下判断。';
 }
 
 function getAttributes(char: AnyCharacter): Attribute[] {
@@ -441,6 +624,7 @@ function getAttributes(char: AnyCharacter): Attribute[] {
     return [
       { label: '好感', value: d.好感 ?? 0 },
       { label: '信任', value: d.信任 ?? 0 },
+      { label: '欲望', value: d.欲望 ?? 0 },
       { label: '阶段', value: d.深层关系阶段 ?? '未建立' },
     ];
   }
@@ -448,13 +632,16 @@ function getAttributes(char: AnyCharacter): Attribute[] {
     return [
       { label: '好感', value: d.好感 ?? 0 },
       { label: '信赖', value: d.信赖 ?? 0 },
+      { label: '色诱', value: d.色诱度 ?? 0 },
       { label: '阶段', value: d.深层关系阶段 ?? '未建立' },
     ];
   }
   if (char.name === '卷岛春') {
     return [
+      { label: '好感', value: d.好感 ?? 0 },
       { label: '依赖', value: d.依赖 ?? 0 },
       { label: '异常', value: d.异常值 ?? 0 },
+      { label: '暴露', value: d.是否已暴露异常面 ? '已暴露' : '未暴露' },
       { label: '阶段', value: d.深层关系阶段 ?? '未建立' },
     ];
   }
@@ -462,6 +649,7 @@ function getAttributes(char: AnyCharacter): Attribute[] {
     return [
       { label: '好感', value: d.好感 ?? 0 },
       { label: '合作', value: d.合作度 ?? 0 },
+      { label: '色气', value: d.色气值 ?? 0 },
       { label: '阶段', value: d.深层关系阶段 ?? '未建立' },
     ];
   }
@@ -469,13 +657,22 @@ function getAttributes(char: AnyCharacter): Attribute[] {
     return [
       { label: '好感', value: d.好感 ?? 0 },
       { label: '压抑', value: d.压抑值 ?? 0 },
+      { label: '顺从', value: d.顺从度 ?? 0 },
       { label: '阶段', value: d.深层关系阶段 ?? '未建立' },
     ];
   }
   if (char.name === '咩子') {
     return [
+      { label: '好感', value: d.好感 ?? 0 },
       { label: '依赖', value: d.依赖 ?? 0 },
       { label: '特殊', value: d.特殊性 ?? '关键角色' },
+    ];
+  }
+  if (char.name === '美佐峰美辻') {
+    return [
+      { label: '现身', value: d.当前是否现身 ? '已现身' : '未现身' },
+      { label: '干涉', value: d.当前干涉状态 ?? '未介入' },
+      { label: '本轮', value: d.是否已介入本轮 ? '已介入' : '未介入' },
     ];
   }
 
@@ -483,22 +680,29 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   if (_.has(d, '当前立场')) result.push({ label: '立场', value: d.当前立场 });
   if (_.has(d, '对user态度')) result.push({ label: '态度', value: d.对user态度 });
   if (_.has(d, '好感')) result.push({ label: '好感', value: d.好感 });
+  if (_.has(d, '当前是否现身')) result.push({ label: '现身', value: d.当前是否现身 ? '已现身' : '未现身' });
+  if (_.has(d, '当前干涉状态')) result.push({ label: '干涉', value: d.当前干涉状态 });
+  if (_.has(d, '是否已介入本轮')) result.push({ label: '本轮', value: d.是否已介入本轮 ? '已介入' : '未介入' });
   if (_.has(d, '是否掌握关键情报')) result.push({ label: '情报', value: d.是否掌握关键情报 ? '掌握' : '未知' });
-  return result.slice(0, 3);
+  return result.slice(0, 5);
 }
 </script>
 
 <style scoped>
 .status-shell {
+  position: relative;
   width: 100%;
   margin: 0 auto;
   color: #f7f1f4;
+  isolation: isolate;
 }
 
 .status-card {
+  position: relative;
   width: 100%;
   border-radius: 32px;
   overflow: hidden;
+  isolation: isolate;
   background:
     radial-gradient(circle at 50% 0%, rgba(224, 90, 114, 0.12) 0%, rgba(224, 90, 114, 0) 28%),
     radial-gradient(circle at 12% 12%, rgba(212, 175, 55, 0.06) 0%, rgba(212, 175, 55, 0) 22%),
@@ -524,6 +728,48 @@ function getAttributes(char: AnyCharacter): Attribute[] {
     0 36px 72px -30px rgba(0, 0, 0, 0.78);
 }
 
+.status-ambience {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.status-ambience-primary {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(224, 90, 114, 0.16) 0%, rgba(224, 90, 114, 0) 28%),
+    radial-gradient(circle at 82% 18%, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0) 24%),
+    radial-gradient(circle at 50% 112%, rgba(224, 90, 114, 0.1) 0%, rgba(224, 90, 114, 0) 34%);
+  opacity: 0.95;
+}
+
+.status-ambience-secondary {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0) 18%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+  mix-blend-mode: screen;
+  opacity: 0.38;
+}
+
+.status-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.08) 0.6px, transparent 0.6px),
+    radial-gradient(rgba(255, 255, 255, 0.04) 0.8px, transparent 0.8px);
+  background-size:
+    14px 14px,
+    24px 24px;
+  background-position:
+    0 0,
+    7px 11px;
+  opacity: 0.14;
+  mix-blend-mode: soft-light;
+}
+
 .hero-bar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -532,6 +778,13 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   padding: 20px 24px 18px;
   border-bottom: 1px solid rgba(224, 90, 114, 0.12);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.hero-bar,
+.status-strip,
+.panel-body {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-side {
@@ -686,11 +939,19 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   opacity: 0.5;
 }
 
-.status-strip {
+.hero-inline-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 10px 18px 0;
+  margin-top: 12px;
+}
+
+.hero-inline-chips-left {
+  justify-content: flex-start;
+}
+
+.hero-inline-chips-right {
+  justify-content: flex-end;
 }
 
 .status-chip {
@@ -771,6 +1032,21 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.panel-fade-enter-active,
+.panel-fade-leave-active {
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s ease,
+    filter 0.26s ease;
+}
+
+.panel-fade-enter-from,
+.panel-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+  filter: blur(4px);
 }
 
 .overview-section {
@@ -989,6 +1265,18 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   line-height: 1;
 }
 
+.overview-status-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.gold-pill {
+  background: rgba(212, 175, 55, 0.14);
+  border-color: rgba(212, 175, 55, 0.24);
+  color: #f3de97;
+}
+
 .scene-section {
   display: flex;
   flex-direction: column;
@@ -1002,140 +1290,227 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .scene-current-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 18px 20px;
-  border-radius: 24px;
-  border: 1px solid rgba(224, 90, 114, 0.16);
-  background: rgba(46, 33, 41, 0.62);
+  gap: 18px;
+  padding: 22px 24px;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(224, 90, 114, 0.18);
+  background:
+    radial-gradient(circle at 12% 24%, rgba(224, 90, 114, 0.16) 0%, rgba(224, 90, 114, 0) 34%),
+    radial-gradient(circle at 88% 22%, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0) 28%),
+    linear-gradient(180deg, rgba(55, 39, 48, 0.84) 0%, rgba(34, 25, 33, 0.82) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 18px 30px -24px rgba(224, 90, 114, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 22px 36px -26px rgba(224, 90, 114, 0.24),
+    0 24px 44px -34px rgba(0, 0, 0, 0.54);
   transition:
     transform 0.25s ease,
     border-color 0.25s ease,
     box-shadow 0.25s ease,
-    background 0.25s ease;
+    background 0.25s ease,
+    filter 0.25s ease;
+}
+
+.scene-current-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0) 44%,
+    rgba(224, 90, 114, 0.08) 100%
+  );
+  pointer-events: none;
+}
+
+.scene-current-card::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 27px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  pointer-events: none;
 }
 
 .scene-current-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(224, 90, 114, 0.24);
-  background: rgba(54, 38, 47, 0.72);
+  transform: translateY(-3px);
+  filter: brightness(1.03);
+  border-color: rgba(224, 90, 114, 0.26);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 22px 36px -24px rgba(224, 90, 114, 0.3),
-    0 0 18px rgba(224, 90, 114, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 28px 40px -24px rgba(224, 90, 114, 0.32),
+    0 0 20px rgba(224, 90, 114, 0.09);
 }
 
 .scene-pin {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 16px;
-  background: rgba(37, 27, 35, 0.9);
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, rgba(58, 42, 51, 0.94) 0%, rgba(34, 25, 31, 0.94) 100%);
   color: #b7a7b0;
-  font-size: 20px;
+  font-size: 22px;
   flex-shrink: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 24px -20px rgba(0, 0, 0, 0.48);
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease,
-    color 0.25s ease;
+    color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .scene-current-card:hover .scene-pin,
 .scene-mini-card:hover .scene-mini-pin {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .scene-pin-danger {
   color: #ef5c78;
-  box-shadow: 0 12px 22px -10px rgba(224, 90, 114, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 26px -16px rgba(224, 90, 114, 0.46),
+    0 0 16px rgba(224, 90, 114, 0.12);
 }
 
 .scene-current-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
 }
 
 .scene-current-name {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #f8f4f6;
   letter-spacing: 0.01em;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.05);
 }
 
 .scene-current-subtitle {
-  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  background: rgba(212, 175, 55, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: #a99aa3;
+  color: #d7b95d;
 }
 
 .scene-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .scene-mini-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-radius: 18px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(34, 25, 33, 0.68);
+  background: linear-gradient(180deg, rgba(39, 29, 37, 0.82) 0%, rgba(29, 22, 29, 0.82) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.02),
-    0 14px 24px -22px rgba(0, 0, 0, 0.35);
+    0 16px 24px -22px rgba(0, 0, 0, 0.4);
   transition:
     transform 0.25s ease,
     border-color 0.25s ease,
     box-shadow 0.25s ease,
-    background 0.25s ease;
+    background 0.25s ease,
+    filter 0.25s ease;
+}
+
+.scene-mini-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(224, 90, 114, 0.08) 0%,
+    rgba(224, 90, 114, 0) 48%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
 }
 
 .scene-mini-card:hover {
   transform: translateY(-2px);
+  filter: brightness(1.03);
   border-color: rgba(224, 90, 114, 0.18);
-  background: rgba(42, 30, 39, 0.8);
+  background: linear-gradient(180deg, rgba(47, 34, 43, 0.88) 0%, rgba(33, 25, 32, 0.88) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 18px 28px -22px rgba(224, 90, 114, 0.22);
 }
 
+.scene-mini-card:hover::before {
+  opacity: 1;
+}
+
 .scene-mini-pin {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 12px;
-  background: rgba(42, 31, 40, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(48, 35, 44, 0.9) 0%, rgba(35, 26, 33, 0.92) 100%);
   color: #9f929a;
   font-size: 16px;
   flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition:
     color 0.25s ease,
-    box-shadow 0.25s ease;
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .scene-mini-card:hover .scene-mini-pin {
   color: #e7dbe0;
+  border-color: rgba(224, 90, 114, 0.14);
   box-shadow: 0 0 12px rgba(224, 90, 114, 0.12);
 }
 
 .scene-mini-name {
+  position: relative;
+  z-index: 1;
   font-size: 13px;
   font-weight: 700;
   color: #f1eaed;
 }
 
 .scene-mini-note {
+  position: relative;
+  z-index: 1;
   margin-top: 4px;
   font-size: 10px;
   color: #9f9199;
@@ -1144,8 +1519,37 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 
 .scene-info-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.scene-info-grid .info-card {
+  background:
+    radial-gradient(circle at 90% 14%, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0) 28%),
+    linear-gradient(180deg, rgba(42, 30, 39, 0.84) 0%, rgba(29, 22, 30, 0.84) 100%);
+  border-color: rgba(212, 175, 55, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 30px -24px rgba(212, 175, 55, 0.16);
+}
+
+.scene-info-grid .card-title {
+  margin-bottom: 10px;
+  color: #d7c089;
+  letter-spacing: 0.16em;
+}
+
+.scene-info-grid .card-tags {
+  gap: 8px;
+}
+
+.scene-info-grid .feast-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(168, 121, 255, 0.16);
+  border-color: rgba(168, 121, 255, 0.26);
+  color: #e9dfff;
+  box-shadow: 0 10px 18px -18px rgba(168, 121, 255, 0.36);
 }
 
 .info-card {
@@ -1228,29 +1632,36 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .character-reference-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 20px;
+  gap: 14px;
+  padding: 15px 16px;
+  border-radius: 22px;
   border: 1px solid rgba(224, 90, 114, 0.16);
-  background: rgba(46, 33, 41, 0.56);
+  background: linear-gradient(180deg, rgba(55, 39, 48, 0.72) 0%, rgba(35, 27, 33, 0.72) 100%);
   color: inherit;
+  overflow: hidden;
   text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 16px 28px -24px rgba(0, 0, 0, 0.42);
   transition:
     transform 0.2s ease,
     border-color 0.2s ease,
     background 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
 }
 
 .character-reference-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(224, 90, 114, 0.24);
-  background: rgba(56, 39, 48, 0.7);
+  transform: translateY(-3px);
+  filter: brightness(1.04);
+  border-color: rgba(224, 90, 114, 0.26);
+  background: linear-gradient(180deg, rgba(66, 46, 58, 0.82) 0%, rgba(41, 30, 38, 0.82) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 18px 30px -20px rgba(224, 90, 114, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 22px 34px -22px rgba(224, 90, 114, 0.34),
     0 0 0 1px rgba(224, 90, 114, 0.06);
 }
 
@@ -1258,35 +1669,159 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   color: #f8f4f6;
 }
 
-.character-reference-card:hover .character-avatar-badge {
-  box-shadow: 0 0 18px rgba(224, 90, 114, 0.18);
+.character-reference-card:hover .character-reference-role,
+.character-reference-card.selected .character-reference-role {
+  color: #e2d0d7;
+}
+
+.character-reference-card:hover .character-reference-meta,
+.character-reference-card.selected .character-reference-meta {
+  color: #b6a6ad;
+}
+
+.character-reference-card:hover .character-avatar-badge,
+.character-reference-card.selected .character-avatar-badge {
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 24px -18px rgba(224, 90, 114, 0.34),
+    0 0 18px rgba(224, 90, 114, 0.16);
 }
 
 .character-reference-card.selected {
   border-color: rgba(224, 90, 114, 0.34);
-  background: rgba(59, 37, 48, 0.72);
+  background: linear-gradient(180deg, rgba(70, 44, 56, 0.84) 0%, rgba(44, 31, 39, 0.82) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 12px 24px -16px rgba(224, 90, 114, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 28px -18px rgba(224, 90, 114, 0.36),
     0 0 22px rgba(224, 90, 114, 0.08);
 }
 
+.character-reference-card.has-residual-aura {
+  border-color: rgba(212, 175, 55, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 30px -24px rgba(212, 175, 55, 0.22),
+    0 0 22px rgba(212, 175, 55, 0.05);
+}
+
+.character-reference-card.has-residual-aura::before {
+  opacity: 1;
+  background: linear-gradient(
+    120deg,
+    rgba(212, 175, 55, 0.14) 0%,
+    rgba(212, 175, 55, 0) 52%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+}
+
+.character-reference-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(224, 90, 114, 0.14) 0%,
+    rgba(224, 90, 114, 0) 46%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.character-reference-card::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 21px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.character-reference-card:hover::before,
+.character-reference-card.selected::before {
+  opacity: 1;
+}
+
+.character-residual-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.26);
+  background: rgba(54, 41, 25, 0.78);
+  box-shadow: 0 12px 20px -18px rgba(212, 175, 55, 0.42);
+}
+
+.character-residual-badge-ring {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f1d885;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.55);
+}
+
+.character-residual-badge-text {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #f4df98;
+}
+
 .character-avatar-badge {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, rgba(79, 57, 68, 0.86) 0%, rgba(38, 28, 35, 0.92) 100%);
   font-size: 18px;
   font-weight: 800;
   color: #f5eef2;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 18px -18px rgba(0, 0, 0, 0.55);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .character-reference-main {
-  min-width: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.character-reference-thought {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(30, 23, 29, 0.62);
+  color: #e5d8dd;
+  font-size: 11px;
+  line-height: 1.55;
+  font-style: italic;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .character-reference-headline {
@@ -1324,9 +1859,35 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .character-reference-role {
-  margin-top: 6px;
   font-size: 11px;
   color: #ab9ca3;
+  transition: color 0.2s ease;
+}
+
+.character-reference-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 10px;
+  color: #8f8189;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.character-reference-meta > span:first-child,
+.character-reference-meta > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.character-reference-divider {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(224, 90, 114, 0.42);
+  flex-shrink: 0;
 }
 
 .absent-section {
@@ -1411,10 +1972,28 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  border-radius: 36px;
-  border: 1px solid rgba(224, 90, 114, 0.16);
-  background: linear-gradient(180deg, rgba(32, 23, 31, 0.98) 0%, rgba(21, 17, 24, 0.99) 100%);
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.52);
+  border-radius: 38px;
+  border: 1px solid rgba(224, 90, 114, 0.18);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(224, 90, 114, 0.14) 0%, rgba(224, 90, 114, 0) 30%),
+    linear-gradient(180deg, rgba(35, 26, 33, 0.99) 0%, rgba(20, 16, 23, 1) 100%);
+  box-shadow:
+    0 44px 86px -20px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(224, 90, 114, 0.04);
+}
+
+.character-detail-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0) 18%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
 }
 
 .character-detail-modal::-webkit-scrollbar {
@@ -1438,13 +2017,65 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   color: #eadddf;
   font-size: 18px;
   line-height: 1;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+}
+
+.detail-close:hover {
+  transform: translateY(-1px);
+  border-color: rgba(224, 90, 114, 0.24);
+  background: rgba(68, 44, 56, 0.9);
+  color: #fff6f8;
+  box-shadow: 0 14px 24px -20px rgba(224, 90, 114, 0.42);
 }
 
 .detail-modal-body {
+  position: relative;
+  z-index: 1;
   padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+}
+
+.detail-modal-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  overflow: hidden;
+  border-radius: 30px;
+  border: 1px solid rgba(224, 90, 114, 0.16);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(224, 90, 114, 0.2) 0%, rgba(224, 90, 114, 0) 34%),
+    radial-gradient(circle at 88% 18%, rgba(212, 175, 55, 0.09) 0%, rgba(212, 175, 55, 0) 28%),
+    linear-gradient(180deg, rgba(56, 40, 49, 0.9) 0%, rgba(31, 22, 30, 0.86) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 24px 36px -28px rgba(224, 90, 114, 0.34);
+}
+
+.detail-modal-hero-glow {
+  position: absolute;
+  inset: auto -12% -42% auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(224, 90, 114, 0.18) 0%, rgba(224, 90, 114, 0) 72%);
+  pointer-events: none;
+}
+
+.detail-modal-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .detail-modal-header {
@@ -1454,6 +2085,8 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .detail-modal-avatar {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1463,6 +2096,18 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 100%);
   font-size: 24px;
   font-weight: 800;
+}
+
+.detail-modal-avatar-large {
+  width: 78px;
+  height: 78px;
+  border-radius: 24px;
+  font-size: 30px;
+  color: #fff7fa;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 18px 28px -18px rgba(224, 90, 114, 0.44);
 }
 
 .detail-flag {
@@ -1479,15 +2124,102 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   line-height: 1.1;
 }
 
+.detail-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #d8c9cf;
+  letter-spacing: 0.12em;
+}
+
+.detail-subtitle-divider {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.56);
+  flex-shrink: 0;
+}
+
+.detail-resonance-banner {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  background: linear-gradient(180deg, rgba(72, 55, 34, 0.58) 0%, rgba(45, 33, 40, 0.76) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 24px -22px rgba(212, 175, 55, 0.26);
+}
+
+.detail-resonance-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #d4bd79;
+}
+
+.detail-resonance-value {
+  min-width: 28px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  color: #f3de97;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .detail-role-banner {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(224, 90, 114, 0.14);
-  background: rgba(40, 29, 36, 0.72);
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  background: linear-gradient(180deg, rgba(64, 47, 34, 0.52) 0%, rgba(42, 31, 39, 0.72) 100%);
   font-size: 12px;
-  color: #efe4e8;
+  color: #f1e5bf;
+  box-shadow: 0 14px 22px -20px rgba(212, 175, 55, 0.24);
+}
+
+.detail-extra-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-residual-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.14);
+  background: linear-gradient(180deg, rgba(56, 42, 28, 0.24) 0%, rgba(36, 29, 31, 0.62) 100%);
+}
+
+.detail-residual-title {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #cbb891;
+}
+
+.detail-residual-value {
+  min-width: 44px;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  color: #f3de97;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .detail-quote {
@@ -1571,12 +2303,17 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   }
 
   .identity-panel,
+  .overview-status-grid,
   .overview-dual-grid,
   .phenomenon-grid,
   .clue-grid,
   .detail-grid.reference-detail-grid,
   .character-grid.reference-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-inline-chips-right {
+    justify-content: flex-start;
   }
 
   .section-head-row {
