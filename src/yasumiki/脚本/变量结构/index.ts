@@ -1,5 +1,6 @@
 import { registerMvuSchema } from 'https://testingcf.jsdelivr.net/gh/StageDog/tavern_resource/dist/util/mvu_zod.js';
 import { Schema } from '../../schema';
+import initvarText from '../../世界书/变量/initvar.yaml?raw';
 
 type JsonPatchOperation = {
   op: 'replace' | 'delta' | 'insert' | 'remove' | 'move';
@@ -12,9 +13,98 @@ type JsonPatchOperation = {
 let isRepairingLatest = false;
 const debugStateKey = '__yasumikiVariableStructureDebug';
 const debugPrefix = '[yasumiki.变量结构]';
+const loopResetNarration = '……眼前猛地一晃。等你回过神时，你已经又站回了刚才的场面里。';
+const loopResetSkipPatchStorageKey = '__yasumikiSkipPatchUntilAssistantMessageId';
+const pendingLoopPromptStorageKey = '__yasumikiPendingLoopPrompt';
+const pendingLoopPromptDeliveredStorageKey = '__yasumikiPendingLoopPromptDelivered';
+const 初始轮回变量 = Schema.parse(YAML.parse(initvarText));
+
+
+function 获取调试目标窗口() {
+  return window.parent ?? window;
+}
+
+function 暴露轮回重置接口() {
+  const target = 获取调试目标窗口() as Window & {
+    __yasumikiLoopReset?: () => Promise<void>;
+  };
+  target.__yasumikiLoopReset = () => 执行轮回重置('status_bar_button');
+}
+
+function 清除待触发轮回提示(reason = 'manual_clear') {
+  window.localStorage.removeItem(pendingLoopPromptStorageKey);
+  window.localStorage.removeItem(pendingLoopPromptDeliveredStorageKey);
+  uninjectPrompts(['yasumiki.loop-reset-persist']);
+  logDebug('已清除轮回提示注入', { reason });
+}
+
+function 轮回提示是否已送达() {
+  return window.localStorage.getItem(pendingLoopPromptDeliveredStorageKey) === 'true';
+}
+
+function 标记轮回提示已送达(reason = 'message_received') {
+  if (!window.localStorage.getItem(pendingLoopPromptStorageKey)) return;
+  window.localStorage.setItem(pendingLoopPromptDeliveredStorageKey, 'true');
+  logDebug('已标记轮回提示送达', { reason });
+}
+
+function 注册待触发轮回提示() {
+  const pendingPrompt = window.localStorage.getItem(pendingLoopPromptStorageKey);
+  if (!pendingPrompt) return;
+
+  uninjectPrompts(['yasumiki.loop-reset-persist']);
+  injectPrompts([
+    {
+      id: 'yasumiki.loop-reset-persist',
+      role: 'system',
+      content: pendingPrompt,
+      position: 'in_chat',
+      depth: 0,
+      should_scan: true,
+      filter: () => Boolean(window.localStorage.getItem(pendingLoopPromptStorageKey)),
+    },
+  ]);
+  logDebug('已注册可跨重新生成的轮回提示注入');
+}
+
+function 构建轮回后场面提示(nextData: Record<string, any>) {
+  const stateSnapshot = {
+    世界: {
+      当前轮回编号: _.get(nextData, '世界.当前轮回编号', 1),
+      当前路线: _.get(nextData, '世界.当前路线', '未定'),
+      当前章节: _.get(nextData, '世界.当前章节', '序章'),
+      当前日期: _.get(nextData, '世界.当前日期', '5月11日'),
+      当前时刻: _.get(nextData, '世界.当前时刻', '09:00'),
+      当前时间段: _.get(nextData, '世界.当前时间段', '清晨'),
+      是否起雾: _.get(nextData, '世界.是否起雾', false),
+      是否处于宴会阶段: _.get(nextData, '世界.是否处于宴会阶段', false),
+    },
+    场景: {
+      当前地点: _.get(nextData, '场景.当前地点', '学生公寓'),
+      在场角色列表: _.get(nextData, '场景.在场角色列表', []),
+      当前宴会参与角色列表: _.get(nextData, '场景.当前宴会参与角色列表', []),
+    },
+    主角: {
+      当前所在地点: _.get(nextData, '主角.当前所在地点', '学生公寓'),
+      当前在场状态: _.get(nextData, '主角.当前在场状态', '在场'),
+      本轮功能身份: _.get(nextData, '主角.本轮功能身份', '未分配'),
+      当前阵营: _.get(nextData, '主角.当前阵营', '未知'),
+      当前状态: _.get(nextData, '主角.当前状态', '清醒'),
+    },
+  };
+
+  return [
+    '刚刚发生了一次轮回错位。下一次回复中，必须直接以“当前变量里的现状”继续正文，不要回到开局，不要沿用旧楼层中的旧场景，也不要假装看不到当前变量。',
+    '可以让主角短暂感到似曾相识、恍惚、时间错位，但不要直说“轮回”。',
+    '以下是轮回后的当前状态快照，你必须以它为准：',
+    '<yasumiki_loop_state>',
+    YAML.stringify(stateSnapshot).trim(),
+    '</yasumiki_loop_state>',
+  ].join('\n');
+}
 
 function updateDebugState(partial: Record<string, any>) {
-  const target = window.parent ?? window;
+  const target = 获取调试目标窗口();
   const current = (_.get(target, debugStateKey, {}) ?? {}) as Record<string, any>;
   _.set(target, debugStateKey, {
     ...current,
@@ -92,18 +182,51 @@ function parseLatestJsonPatch(message: string) {
   }
 }
 
-function getLatestAssistantMessageContent() {
+function 读取跳过补丁阈值() {
+  const raw = window.localStorage.getItem(loopResetSkipPatchStorageKey);
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function 设置跳过补丁阈值(messageId: number | null | undefined) {
+  if (typeof messageId !== 'number' || Number.isNaN(messageId)) return;
+  window.localStorage.setItem(loopResetSkipPatchStorageKey, String(messageId));
+}
+
+function 是否跳过Latest补丁(messageId: number | null | undefined) {
+  const threshold = 读取跳过补丁阈值();
+  if (threshold === null) return false;
+  if (typeof messageId === 'number' && messageId > threshold) {
+    window.localStorage.removeItem(loopResetSkipPatchStorageKey);
+    return false;
+  }
+  return true;
+}
+
+function getLatestAssistantMessageMeta() {
   const messages = getChatMessages('0-{{lastMessageId}}', { role: 'assistant', include_swipes: true });
   const latest = messages[messages.length - 1] as Record<string, any> | undefined;
-  if (!latest) return '';
+  if (!latest) {
+    return { content: '', messageId: null as number | null };
+  }
 
   const swipeId = _.get(latest, 'swipe_id');
   const swipes = _.get(latest, 'swipes');
   if (Array.isArray(swipes) && typeof swipeId === 'number' && typeof swipes[swipeId] === 'string') {
-    return swipes[swipeId] as string;
+    return {
+      content: swipes[swipeId] as string,
+      messageId: Number(_.get(latest, 'message_id', _.get(latest, 'mesid', null))),
+    };
   }
 
-  return (_.get(latest, 'message', '') as string) || '';
+  return {
+    content: (_.get(latest, 'message', '') as string) || '',
+    messageId: Number(_.get(latest, 'message_id', _.get(latest, 'mesid', null))),
+  };
+}
+
+function getLatestAssistantMessageContent() {
+  return getLatestAssistantMessageMeta().content;
 }
 
 function extractMentionedCharacters(message: string, allCharacterNames: string[]) {
@@ -205,11 +328,7 @@ function fillMissingThoughts(variables: Record<string, any>, latestMessageConten
 }
 
 function dedupeStringArray(items: unknown[]) {
-  return _.uniq(
-    items
-      .map(item => String(item ?? '').trim())
-      .filter(Boolean),
-  );
+  return _.uniq(items.map(item => String(item ?? '').trim()).filter(Boolean));
 }
 
 function sanitizeMemoryProgress(variables: Record<string, any>) {
@@ -286,6 +405,199 @@ function reconcilePresence(variables: Record<string, any>, latestMessageContent 
   });
 }
 
+function 计算残留关系(currentData: Record<string, any>, nextData: Record<string, any>) {
+  const 映射 = [
+    ['芹泽千枝实', '信任', '跨轮残留.角色残留关系.千枝实残留关系'],
+    ['回末李花子', '信赖', '跨轮残留.角色残留关系.李花子残留关系'],
+    ['马宫久子', '合作度', '跨轮残留.角色残留关系.久子残留关系'],
+    ['织部香织', '顺从度', '跨轮残留.角色残留关系.香织残留关系'],
+    ['卷岛春', '依赖', '跨轮残留.角色残留关系.春残留关系'],
+    ['咩子', '依赖', '跨轮残留.角色残留关系.咩子残留关系'],
+  ] as const;
+
+  映射.forEach(([角色名, 字段名, 残留路径]) => {
+    const 当前值 = Number(_.get(currentData, `角色.女性角色.${角色名}.${字段名}`, 0));
+    const 初始值 = Number(_.get(初始轮回变量, `角色.女性角色.${角色名}.${字段名}`, 0));
+    const 有效增量 = Math.max(0, 当前值 - 初始值);
+    const 旧残留 = Number(_.get(currentData, 残留路径, 0));
+    const 新残留 = _.clamp(Math.max(旧残留, Math.floor(有效增量 * 0.35)), 0, 100);
+    _.set(nextData, 残留路径, 新残留);
+  });
+
+  const 当前认知 = Number(_.get(currentData, '跨轮残留.轮回认知.user轮回认知层级', 0));
+  _.set(nextData, '跨轮残留.轮回认知.user轮回认知层级', _.clamp(当前认知 + 1, 0, 10));
+
+  const 千枝实记忆 = Number(_.get(currentData, '跨轮残留.轮回认知.千枝实轮回记忆清晰度', 0));
+  _.set(nextData, '跨轮残留.轮回认知.千枝实轮回记忆清晰度', _.clamp(Math.max(千枝实记忆, 15), 0, 100));
+
+  const 旧梦境稳定度 = Number(_.get(currentData, '跨轮残留.神异连续.梦境稳定度', 100));
+  _.set(nextData, '跨轮残留.神异连续.梦境稳定度', _.clamp(旧梦境稳定度 - 5, 0, 100));
+}
+
+function 应用可继承线索(currentData: Record<string, any>, nextData: Record<string, any>) {
+  _.set(nextData, '线索与真相.已解锁线索列表', []);
+  _.set(nextData, '线索与真相.已解锁真相列表', _.cloneDeep(_.get(currentData, '线索与真相.已解锁真相列表', [])));
+  _.set(
+    nextData,
+    '线索与真相.已触发线索回收节点列表',
+    _.cloneDeep(_.get(currentData, '线索与真相.已触发线索回收节点列表', [])),
+  );
+}
+
+function 应用角色轮回残响(nextData: Record<string, any>) {
+  const 残响规则 = [
+    [
+      '跨轮残留.角色残留关系.千枝实残留关系',
+      '角色.女性角色.芹泽千枝实.当前心里话',
+      15,
+      '……为什么总觉得，好像已经见过你。',
+    ],
+    ['跨轮残留.角色残留关系.春残留关系', '角色.女性角色.卷岛春.当前心里话', 10, '又是这种感觉……你不准突然不见。'],
+    ['跨轮残留.角色残留关系.李花子残留关系', '角色.女性角色.回末李花子.当前心里话', 20, '梦里见过的气息，又回来了。'],
+    ['跨轮残留.角色残留关系.咩子残留关系', '角色.女性角色.咩子.当前心里话', 10, '……认得你。味道没有变。'],
+  ] as const;
+
+  残响规则.forEach(([残留路径, 心里话路径, 阈值, 文本]) => {
+    const 残留值 = Number(_.get(nextData, 残留路径, 0));
+    if (残留值 >= 阈值) {
+      _.set(nextData, 心里话路径, 文本);
+    }
+  });
+}
+
+function 同步当前角色场面锚点(currentData: Record<string, any>, nextData: Record<string, any>) {
+  (['女性角色', '男性角色'] as const).forEach(分组名 => {
+    const currentGroup = _.get(currentData, `角色.${分组名}`, {}) as Record<string, Record<string, any>>;
+
+    Object.entries(currentGroup).forEach(([角色名, detail]) => {
+      if (!_.isObject(detail)) return;
+      const basePath = `角色.${分组名}.${角色名}`;
+      _.set(
+        nextData,
+        `${basePath}.当前所在地点`,
+        _.get(detail, '当前所在地点', _.get(nextData, `${basePath}.当前所在地点`)),
+      );
+      _.set(
+        nextData,
+        `${basePath}.当前在场状态`,
+        _.get(detail, '当前在场状态', _.get(nextData, `${basePath}.当前在场状态`, '离场')),
+      );
+      _.set(nextData, `${basePath}.当前心里话`, '');
+
+      if (_.has(detail, '本轮功能身份')) {
+        _.set(
+          nextData,
+          `${basePath}.本轮功能身份`,
+          _.get(detail, '本轮功能身份', _.get(nextData, `${basePath}.本轮功能身份`, '未分配')),
+        );
+      }
+      if (_.has(detail, '当前立场')) {
+        _.set(nextData, `${basePath}.当前立场`, _.get(detail, '当前立场', _.get(nextData, `${basePath}.当前立场`)));
+      }
+      if (_.has(detail, '对user态度')) {
+        _.set(
+          nextData,
+          `${basePath}.对user态度`,
+          _.get(detail, '对user态度', _.get(nextData, `${basePath}.对user态度`)),
+        );
+      }
+      if (_.has(detail, '当前是否现身')) {
+        _.set(
+          nextData,
+          `${basePath}.当前是否现身`,
+          _.get(detail, '当前是否现身', _.get(nextData, `${basePath}.当前是否现身`)),
+        );
+      }
+      if (_.has(detail, '当前干涉状态')) {
+        _.set(
+          nextData,
+          `${basePath}.当前干涉状态`,
+          _.get(detail, '当前干涉状态', _.get(nextData, `${basePath}.当前干涉状态`)),
+        );
+      }
+      if (_.has(detail, '是否已介入本轮')) {
+        _.set(
+          nextData,
+          `${basePath}.是否已介入本轮`,
+          _.get(detail, '是否已介入本轮', _.get(nextData, `${basePath}.是否已介入本轮`)),
+        );
+      }
+    });
+  });
+}
+
+function 应用当前场面锚点(currentData: Record<string, any>, nextData: Record<string, any>) {
+  ['当前路线', '当前章节', '当前日期', '当前时刻', '当前时间段', '是否起雾', '是否处于宴会阶段', '主线层级'].forEach(
+    字段名 => {
+      _.set(nextData, `世界.${字段名}`, _.get(currentData, `世界.${字段名}`, _.get(nextData, `世界.${字段名}`)));
+    },
+  );
+
+  _.set(nextData, '场景', _.cloneDeep(_.get(currentData, '场景', _.get(nextData, '场景', {}))));
+  _.set(nextData, '宴会', _.cloneDeep(_.get(currentData, '宴会', _.get(nextData, '宴会', {}))));
+  _.set(nextData, '主角.当前所在地点', _.get(currentData, '主角.当前所在地点', _.get(nextData, '主角.当前所在地点')));
+  _.set(nextData, '主角.当前在场状态', _.get(currentData, '主角.当前在场状态', _.get(nextData, '主角.当前在场状态')));
+  _.set(nextData, '主角.本轮功能身份', _.get(currentData, '主角.本轮功能身份', _.get(nextData, '主角.本轮功能身份')));
+  _.set(nextData, '主角.当前阵营', _.get(currentData, '主角.当前阵营', _.get(nextData, '主角.当前阵营')));
+  _.set(nextData, '主角.当前状态', _.get(currentData, '主角.当前状态', _.get(nextData, '主角.当前状态')));
+  _.set(
+    nextData,
+    '主角.是否完成宴前准备',
+    _.get(currentData, '主角.是否完成宴前准备', _.get(nextData, '主角.是否完成宴前准备')),
+  );
+  _.set(
+    nextData,
+    '主角.是否已知晓身份',
+    _.get(currentData, '主角.是否已知晓身份', _.get(nextData, '主角.是否已知晓身份')),
+  );
+
+  同步当前角色场面锚点(currentData, nextData);
+}
+
+function 构建轮回重置变量(currentVariables: Record<string, any>) {
+  const currentData = Schema.parse(_.get(currentVariables, 'stat_data', {}));
+  const nextData = _.cloneDeep(初始轮回变量);
+
+  _.set(nextData, '永久Key', _.cloneDeep(_.get(currentData, '永久Key', {})));
+  _.set(nextData, '跨轮残留', _.cloneDeep(_.get(currentData, '跨轮残留', {})));
+  应用可继承线索(currentData, nextData);
+  _.set(nextData, '世界.当前轮回编号', Number(_.get(currentData, '世界.当前轮回编号', 1)) + 1);
+  应用当前场面锚点(currentData, nextData);
+
+  计算残留关系(currentData, nextData);
+  应用角色轮回残响(nextData);
+  return Schema.parse(nextData);
+}
+
+async function 执行轮回重置(trigger = 'manual_button') {
+  if (typeof Mvu === 'undefined' || !Mvu?.getMvuData || !Mvu?.replaceMvuData) {
+    toastr.error('Mvu 尚未初始化，无法执行轮回重置');
+    return;
+  }
+
+  try {
+    toastr.info(loopResetNarration, '轮回开始');
+    await new Promise(resolve => setTimeout(resolve, 900));
+
+    const { messageId } = getLatestAssistantMessageMeta();
+    设置跳过补丁阈值(messageId);
+
+    const latest = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+    const nextData = 构建轮回重置变量(latest);
+    window.localStorage.setItem(pendingLoopPromptStorageKey, 构建轮回后场面提示(nextData));
+    window.localStorage.setItem(pendingLoopPromptDeliveredStorageKey, 'false');
+    _.set(latest, 'stat_data', nextData);
+    await Mvu.replaceMvuData(latest, { type: 'message', message_id: 'latest' });
+    toastr.success('已执行轮回重置，跨轮变量已保留');
+    logDebug('轮回重置已执行', { trigger, loop: _.get(nextData, '世界.当前轮回编号') });
+    window.location.reload();
+  } catch (error) {
+    console.error(`${debugPrefix} 轮回重置失败`, error);
+    toastr.error(`轮回重置失败: ${String(error)}`);
+    updateDebugState({ stage: '轮回重置失败', trigger, error: String(error) });
+  }
+}
+
 async function repairLatestMessageVariables(trigger = 'manual') {
   if (isRepairingLatest) {
     logDebug('跳过重复 latest 修正', { trigger });
@@ -297,8 +609,9 @@ async function repairLatestMessageVariables(trigger = 'manual') {
     return;
   }
 
-  const latestMessageContent = getLatestAssistantMessageContent();
-  const operations = parseLatestJsonPatch(latestMessageContent);
+  const latestMessage = getLatestAssistantMessageMeta();
+  const latestMessageContent = latestMessage.content;
+  const operations = 是否跳过Latest补丁(latestMessage.messageId) ? [] : parseLatestJsonPatch(latestMessageContent);
 
   isRepairingLatest = true;
   try {
@@ -347,6 +660,17 @@ async function init() {
   await waitGlobalInitialized('Mvu');
   logDebug('Mvu 初始化完成');
 
+  暴露轮回重置接口();
+  注册待触发轮回提示();
+  eventOn(tavern_events.MESSAGE_SENT, () => {
+    if (window.localStorage.getItem(pendingLoopPromptStorageKey) && 轮回提示是否已送达()) {
+      清除待触发轮回提示('MESSAGE_SENT_AFTER_LOOP_SCENE');
+    }
+  });
+  eventOn(tavern_events.CHAT_CHANGED, () => {
+    清除待触发轮回提示('CHAT_CHANGED');
+  });
+
   await repairLatestMessageVariables('init');
 
   eventOn(Mvu.events.VARIABLE_INITIALIZED, (variables, swipeId) => {
@@ -356,8 +680,9 @@ async function init() {
   });
 
   eventOn(Mvu.events.BEFORE_MESSAGE_UPDATE, context => {
-    const latestMessageContent = getLatestAssistantMessageContent() || context.message_content;
-    const operations = parseLatestJsonPatch(latestMessageContent);
+    const latestMessage = getLatestAssistantMessageMeta();
+    const latestMessageContent = latestMessage.content || context.message_content;
+    const operations = 是否跳过Latest补丁(latestMessage.messageId) ? [] : parseLatestJsonPatch(latestMessageContent);
     if (operations.length) {
       applySelectedPatch(context.variables, operations);
     }
@@ -368,8 +693,9 @@ async function init() {
   });
 
   eventOn(Mvu.events.VARIABLE_UPDATE_ENDED, variables => {
-    const latestMessageContent = getLatestAssistantMessageContent();
-    const operations = parseLatestJsonPatch(latestMessageContent);
+    const latestMessage = getLatestAssistantMessageMeta();
+    const latestMessageContent = latestMessage.content;
+    const operations = 是否跳过Latest补丁(latestMessage.messageId) ? [] : parseLatestJsonPatch(latestMessageContent);
     if (operations.length) {
       applySelectedPatch(variables, operations);
     }
@@ -380,10 +706,12 @@ async function init() {
     scheduleRepairLatest('VARIABLE_UPDATE_ENDED');
   });
   eventOn(tavern_events.MESSAGE_RECEIVED, () => {
+    标记轮回提示已送达('MESSAGE_RECEIVED');
     logDebug('MESSAGE_RECEIVED');
     scheduleRepairLatest('MESSAGE_RECEIVED');
   });
   eventOn(tavern_events.MESSAGE_UPDATED, () => {
+    标记轮回提示已送达('MESSAGE_UPDATED');
     logDebug('MESSAGE_UPDATED');
     scheduleRepairLatest('MESSAGE_UPDATED');
   });

@@ -17,6 +17,8 @@ type JsonPatchOperation = {
   to?: string;
 };
 
+const loopResetSkipPatchStorageKey = '__yasumikiSkipPatchUntilAssistantMessageId';
+
 function decodeJsonPointer(path: string) {
   return path
     .split('/')
@@ -79,6 +81,22 @@ function parseLatestJsonPatch(message: string) {
   } catch {
     return [] as JsonPatchOperation[];
   }
+}
+
+function 读取跳过补丁阈值() {
+  const raw = window.localStorage.getItem(loopResetSkipPatchStorageKey);
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function 是否跳过Latest补丁(messageId: number | null | undefined) {
+  const threshold = 读取跳过补丁阈值();
+  if (threshold === null) return false;
+  if (typeof messageId === 'number' && messageId > threshold) {
+    window.localStorage.removeItem(loopResetSkipPatchStorageKey);
+    return false;
+  }
+  return true;
 }
 
 function applyDisplayPatch(data: Record<string, any>, operations: JsonPatchOperation[]) {
@@ -150,21 +168,34 @@ export const useDataStore = defineStore('yasumiki-status-bar', () => {
   const rawStatData = computed(() => mvuStore.data);
   const latestAssistantMessage = computed(() => {
     const messages = getChatMessages('0-{{lastMessageId}}', { role: 'assistant', include_swipes: true });
-    return messages[messages.length - 1] ?? null;
+    return (messages[messages.length - 1] ?? null) as Record<string, any> | null;
   });
-  const latestAssistantMessageContent = computed(() => {
+  const latestAssistantMessageMeta = computed(() => {
     const message = latestAssistantMessage.value;
-    if (!message) return '';
+    if (!message) {
+      return { content: '', messageId: null as number | null };
+    }
 
     const swipeId = _.get(message, 'swipe_id');
     const swipes = _.get(message, 'swipes');
     if (Array.isArray(swipes) && typeof swipeId === 'number' && typeof swipes[swipeId] === 'string') {
-      return swipes[swipeId] as string;
+      return {
+        content: swipes[swipeId] as string,
+        messageId: Number(_.get(message, 'message_id', _.get(message, 'mesid', null))),
+      };
     }
 
-    return _.get(message, 'message', '') as string;
+    return {
+      content: (_.get(message, 'message', '') as string) || '',
+      messageId: Number(_.get(message, 'message_id', _.get(message, 'mesid', null))),
+    };
   });
-  const latestJsonPatch = computed(() => parseLatestJsonPatch(latestAssistantMessageContent.value));
+  const latestAssistantMessageContent = computed(() => latestAssistantMessageMeta.value.content);
+  const latestJsonPatch = computed(() =>
+    是否跳过Latest补丁(latestAssistantMessageMeta.value.messageId)
+      ? []
+      : parseLatestJsonPatch(latestAssistantMessageContent.value),
+  );
   const statData = computed(() => {
     const patched = applyDisplayPatch(rawStatData.value, latestJsonPatch.value);
     const reconciled = reconcileScenePresence(patched);
@@ -198,8 +229,12 @@ export const useDataStore = defineStore('yasumiki-status-bar', () => {
 
   const presentNames = computed(() => new Set<string>((scene.value.在场角色列表 ?? []) as string[]));
 
-  const presentCharacters = computed(() => allCharacters.value.filter(char => presentNames.value.has(char.name)));
-  const absentCharacters = computed(() => allCharacters.value.filter(char => !presentNames.value.has(char.name)));
+  const mergedCharacters = computed(() =>
+    allCharacters.value.map(char => ({
+      ...char,
+      isPresent: presentNames.value.has(char.name),
+    })),
+  );
 
   return {
     data: statData,
@@ -213,7 +248,6 @@ export const useDataStore = defineStore('yasumiki-status-bar', () => {
     clues,
     permanentKeys,
     crossLoop,
-    presentCharacters,
-    absentCharacters,
+    mergedCharacters,
   };
 });
