@@ -193,13 +193,7 @@
                     <span class="character-residual-badge-text">残响</span>
                   </div>
                   <div class="character-avatar-badge">
-                    <img
-                      v-if="getAvatarUrl(char.name)"
-                      :src="getAvatarUrl(char.name)"
-                      :alt="`${char.name}头像`"
-                      class="character-avatar-image"
-                    />
-                    <span v-else>{{ getAvatarText(char.name) }}</span>
+                    <span>{{ getAvatarText(char.name) }}</span>
                   </div>
                   <div class="character-reference-main compact-reference-main">
                     <div class="character-reference-headline compact-reference-headline">
@@ -233,13 +227,7 @@
                   <div class="detail-modal-hero">
                     <div class="detail-modal-hero-glow"></div>
                     <div class="detail-modal-avatar detail-modal-avatar-large">
-                      <img
-                        v-if="getAvatarUrl(selectedCharacter.name)"
-                        :src="getAvatarUrl(selectedCharacter.name)"
-                        :alt="`${selectedCharacter.name}头像`"
-                        class="character-avatar-image detail-avatar-image"
-                      />
-                      <span v-else>{{ getAvatarText(selectedCharacter.name) }}</span>
+                      <span>{{ getAvatarText(selectedCharacter.name) }}</span>
                     </div>
                     <div class="detail-modal-hero-copy">
                       <div class="detail-flag">角色启示</div>
@@ -252,23 +240,36 @@
                     </div>
                   </div>
 
-                  <div class="detail-portrait-card">
+                  <div v-if="shouldShowPortrait(selectedCharacter)" class="detail-portrait-card">
                     <div class="detail-portrait-head">
                       <span class="detail-portrait-label">立绘栏</span>
-                      <span class="detail-portrait-tip">可填图床</span>
+                      <span v-if="hasPortraitBackFace(selectedCharacter.name)" class="detail-portrait-tip">点击切换立绘</span>
+                      <span v-else class="detail-portrait-tip">常态立绘</span>
                     </div>
-                    <div class="detail-portrait-frame">
+                    <div class="detail-portrait-toolbar">
+                      <span class="detail-portrait-face-badge">
+                        {{ isPortraitFlipped(selectedCharacter.name) ? '另一面' : '常态' }}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      class="detail-portrait-frame detail-portrait-button"
+                      :class="{ interactive: hasPortraitBackFace(selectedCharacter.name), swapping: portraitSwapState[selectedCharacter.name] }"
+                      :disabled="!hasPortraitBackFace(selectedCharacter.name)"
+                      @click="togglePortraitFace(selectedCharacter.name)"
+                    >
                       <img
-                        v-if="getPortraitUrl(selectedCharacter.name)"
-                        :src="getPortraitUrl(selectedCharacter.name)"
-                        :alt="`${selectedCharacter.name}立绘`"
-                        class="detail-portrait-image"
+                        v-if="getCurrentPortraitUrl(selectedCharacter.name)"
+                        :key="`${selectedCharacter.name}-${getCurrentPortraitFace(selectedCharacter.name)}`"
+                        :src="getCurrentPortraitUrl(selectedCharacter.name)"
+                        :alt="`${selectedCharacter.name}${isPortraitFlipped(selectedCharacter.name) ? '另一面' : '常态'}立绘`"
+                        class="detail-portrait-image detail-portrait-image-switch"
                       />
                       <div v-else class="detail-portrait-placeholder">
-                        <span class="detail-portrait-placeholder-title">立绘预留</span>
-                        <span class="detail-portrait-placeholder-text">在角色立绘映射里填入图床 URL 后显示</span>
+                        <span class="detail-portrait-placeholder-title">常态立绘预留</span>
+                        <span class="detail-portrait-placeholder-text">在角色立绘映射里填入 normal 图床 URL 后显示</span>
                       </div>
-                    </div>
+                    </button>
                   </div>
 
                   <div class="detail-layout-row">
@@ -627,43 +628,25 @@ const identityAssignments = computed(() => {
   return Object.entries(record).map(([label, value]) => ({ label, value }));
 });
 
-const characterAvatarUrlMap: Partial<Record<string, string>> = {
-  芹泽千枝实: '',
-  回末李花子: '',
-  马宫久子: '',
-  织部香织: '',
-  卷岛春: '',
-  咩子: '',
-  山胁多惠: '',
-  美佐峰美辻: '',
-  织部泰长: '',
-  织部义次: '',
-  酿田近望: '',
-  室匠: '',
-  能里清之介: '',
-  卷岛宽造: '',
-  狼爷爷: '',
-  桥本雄大: '',
+type PortraitFaceId = 'normal' | 'nsfw';
+
+type PortraitFaces = {
+  normal: string;
+  nsfw: string;
 };
 
-const characterPortraitUrlMap: Partial<Record<string, string>> = {
-  芹泽千枝实: '',
-  回末李花子: 'https://img.213964.xyz/huiweilihuazi.png',
-  马宫久子: '',
-  织部香织: '',
-  卷岛春: '',
-  咩子: '',
-  山胁多惠: '',
-  美佐峰美辻: '',
-  织部泰长: '',
-  织部义次: '',
-  酿田近望: '',
-  室匠: '',
-  能里清之介: '',
-  卷岛宽造: '',
-  狼爷爷: '',
-  桥本雄大: '',
+const characterPortraitUrlMap: Partial<Record<string, PortraitFaces>> = {
+  芹泽千枝实: { normal: 'https://img.213964.xyz/qzs.png', nsfw: 'https://img.213964.xyz/qzsnsfw.png' },
+  回末李花子: { normal: 'https://img.213964.xyz/lihuazi.png', nsfw: 'https://img.213964.xyz/lihuazinsfw.png' },
+  马宫久子: { normal: 'https://img.213964.xyz/magongjiuzi.png', nsfw: 'https://img.213964.xyz/magongjiuzinsfw.png' },
+  织部香织: { normal: 'https://img.213964.xyz/zhibuxiangzhi.png', nsfw: 'https://img.213964.xyz/zhibuxiangzhinsfw.png' },
+  卷岛春: { normal: 'https://img.213964.xyz/chun.png', nsfw: 'https://img.213964.xyz/chunnsfw.png' },
+  咩子: { normal: 'https://img.213964.xyz/miezi.png', nsfw: '' },
+  美佐峰美辻: { normal: 'https://img.213964.xyz/meizuofeng.png', nsfw: 'https://img.213964.xyz/meizuofengnsfw.png' },
 };
+
+const portraitFaceState = ref<Partial<Record<string, PortraitFaceId>>>({});
+const portraitSwapState = ref<Partial<Record<string, boolean>>>({});
 
 function getPresenceText(detail: Record<string, any>) {
   return detail.当前在场状态 ?? '未知';
@@ -681,12 +664,40 @@ function getAvatarText(name: string) {
   return name.slice(0, 1);
 }
 
-function getAvatarUrl(name: string) {
-  return characterAvatarUrlMap[name]?.trim() ?? '';
+function shouldShowPortrait(char: AnyCharacter) {
+  return char.type === 'female' && char.name !== '山胁多惠';
 }
 
-function getPortraitUrl(name: string) {
-  return characterPortraitUrlMap[name]?.trim() ?? '';
+function hasPortraitBackFace(name: string) {
+  const faces = characterPortraitUrlMap[name];
+  if (!faces) return false;
+  return Boolean(faces.nsfw?.trim());
+}
+
+function getPortraitFaceUrl(name: string, face: PortraitFaceId) {
+  const faces = characterPortraitUrlMap[name];
+  return faces?.[face]?.trim() ?? '';
+}
+
+function isPortraitFlipped(name: string) {
+  return portraitFaceState.value[name] === 'nsfw';
+}
+
+function getCurrentPortraitFace(name: string): PortraitFaceId {
+  return isPortraitFlipped(name) ? 'nsfw' : 'normal';
+}
+
+function getCurrentPortraitUrl(name: string) {
+  return getPortraitFaceUrl(name, getCurrentPortraitFace(name));
+}
+
+function togglePortraitFace(name: string) {
+  if (!hasPortraitBackFace(name)) return;
+  portraitSwapState.value[name] = true;
+  portraitFaceState.value[name] = portraitFaceState.value[name] === 'nsfw' ? 'normal' : 'nsfw';
+  window.setTimeout(() => {
+    portraitSwapState.value[name] = false;
+  }, 220);
 }
 
 function hasImportantResidualAura(char: AnyCharacter | null) {
@@ -2455,6 +2466,25 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   color: #f0e7eb;
 }
 
+.detail-portrait-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-portrait-face-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #dfd3d8;
+}
+
 .character-state-pill {
   flex-shrink: 0;
   padding: 3px 8px;
@@ -3026,6 +3056,29 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   background: rgba(212, 175, 55, 0.12);
   border: 1px solid rgba(212, 175, 55, 0.18);
   color: #f2df9a;
+}
+
+.detail-portrait-image-switch {
+  animation: portraitFadeSwap 0.22s ease;
+}
+
+.detail-portrait-button.interactive:active {
+  transform: scale(0.985);
+}
+
+.detail-portrait-button.swapping .detail-portrait-image-switch {
+  filter: saturate(1.02) brightness(1.02);
+}
+
+@keyframes portraitFadeSwap {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .empty-text {
