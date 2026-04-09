@@ -1,5 +1,4 @@
 const 在场状态值 = ['在场', '离场', '独处中', '被关押', '被隔离', '宴会中', '不可见', '神隐中'] as const;
-const 深层关系阶段值 = ['未建立', '产生印象', '试探期', '信任期', '深层亲密期', '共犯期', '专属期'] as const;
 const 当前时间段值 = ['清晨', '白天', '傍晚', '夜间', '雾夜'] as const;
 const 当前阵营值 = ['未知', '人类', '狼侧'] as const;
 const 主角当前状态值 = ['清醒', '睡梦中', '在场', '离场', '被关押', '被压制'] as const;
@@ -37,27 +36,19 @@ const 功能身份别名映射: Record<string, string> = {
   未确认: '未分配',
   未知身份: '未分配',
   无身份: '未分配',
+  平民: '未分配',
+  普通人: '未分配',
+  普通平民: '未分配',
+  普通村民: '未分配',
+  村民: '未分配',
+  人类: '未分配',
+  火柴人: '未分配',
   猿猴: '猿',
   蛛: '蜘蛛',
   蜘蛛神: '蜘蛛',
   乌鸦神: '乌鸦',
   狼神: '狼',
   蛇神: '蛇',
-};
-
-const 当前立场别名映射: Record<string, string> = {
-  中性: '中立',
-  保留: '中立',
-  犹豫: '摇摆',
-  动摇: '摇摆',
-  冷眼旁观: '旁观',
-  冷漠旁观: '旁观',
-  仇视: '敌意',
-  敌视: '敌意',
-  敌对: '敌意',
-  厌恶: '敌意',
-  狂躁: '暴躁',
-  诡谲: '诡异',
 };
 
 const 对user态度别名映射: Record<string, string> = {
@@ -71,31 +62,12 @@ const 对user态度别名映射: Record<string, string> = {
   冷淡: '观察',
 };
 
-const 美辻干涉状态别名映射: Record<string, string> = {
-  没有介入: '未介入',
-  未干涉: '未介入',
-  观察中: '观察中',
-  已干涉: '已介入',
-  介入中: '已介入',
-  暗中干涉: '已介入',
-};
-
 const 美辻轮回干涉状态别名映射: Record<string, string> = {
   未知: '未确认',
   尚未确认: '未确认',
   没有干涉: '未确认',
   已干涉: '已介入',
   干涉中: '已介入',
-};
-
-const 春神异状态别名映射: Record<string, string> = {
-  未觉醒: '未激活',
-  未启动: '未激活',
-  觉醒: '觉醒',
-  半觉醒: '半觉醒',
-  失控: '失控',
-  附身: '附身',
-  活化: '觉醒',
 };
 
 export function 归一化文本(value: unknown) {
@@ -150,13 +122,21 @@ function 创建日期标准化器(默认值: string) {
     .string()
     .transform(input => {
       const 文本 = 归一化文本(input);
-      const matched = 文本.match(/^(\d{1,2})月(\d{1,2})日$/);
-      if (!matched) {
-        return 文本 || 默认值;
+      const 月日格式 = 文本.match(/^(\d{1,2})月(\d{1,2})日$/);
+      if (月日格式) {
+        const month = _.clamp(Number(月日格式[1]), 1, 12);
+        const day = _.clamp(Number(月日格式[2]), 1, 31);
+        return `${month}月${day}日`;
       }
-      const month = _.clamp(Number(matched[1]), 1, 12);
-      const day = _.clamp(Number(matched[2]), 1, 31);
-      return `${month}月${day}日`;
+
+      const iso格式 = 文本.match(/^(?:\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (iso格式) {
+        const month = _.clamp(Number(iso格式[1]), 1, 12);
+        const day = _.clamp(Number(iso格式[2]), 1, 31);
+        return `${month}月${day}日`;
+      }
+
+      return 默认值;
     })
     .prefault(默认值);
 }
@@ -192,25 +172,6 @@ export const 创建在场状态 = (初始值: (typeof 在场状态值)[number] =
   });
 export const 在场状态 = 创建在场状态();
 
-export const 创建深层关系阶段 = (初始值: (typeof 深层关系阶段值)[number] = '未建立') =>
-  创建枚举标准化器(深层关系阶段值, 初始值, {
-    初见: '产生印象',
-    印象期: '产生印象',
-    观察期: '试探期',
-    暧昧期: '信任期',
-    依赖期: '信任期',
-    亲密期: '深层亲密期',
-    深度亲密期: '深层亲密期',
-    内体结合: '深层亲密期',
-    肉体结合: '深层亲密期',
-    发生关系: '深层亲密期',
-    发生性关系: '深层亲密期',
-    关系确认: '专属期',
-    恋爱期: '专属期',
-    恋人期: '专属期',
-  });
-export const 深层关系阶段 = 创建深层关系阶段();
-
 export const 创建角色功能身份 = (初始值 = '未分配') => 创建字符串标准化器(初始值, 功能身份别名映射);
 export const 角色功能身份 = 创建角色功能身份();
 
@@ -219,6 +180,55 @@ export const 数值百分比 = (初始值: number) =>
     .number()
     .transform(value => _.clamp(value, 0, 100))
     .prefault(初始值);
+
+function 读取兼容关系数值(
+  data: Record<string, any>,
+  主字段名: string,
+  默认值: number,
+  兼容字段名?: string,
+  兼容默认值 = 默认值,
+) {
+  const 主值 = Number(_.get(data, 主字段名, 默认值));
+  const 归一主值 = Number.isFinite(主值) ? _.clamp(主值, 0, 100) : 默认值;
+  if (!兼容字段名) return 归一主值;
+
+  const 兼容值 = Number(_.get(data, 兼容字段名, 兼容默认值));
+  const 归一兼容值 = Number.isFinite(兼容值) ? _.clamp(兼容值, 0, 100) : 兼容默认值;
+  if (归一主值 !== 默认值) return 归一主值;
+  if (归一兼容值 !== 兼容默认值) return 归一兼容值;
+  return 归一主值;
+}
+
+function 统一女性关系字段<T extends Record<string, any>>(
+  data: T,
+  options: {
+    信任默认值: number;
+    欲望默认值: number;
+    信任兼容字段?: string;
+    欲望兼容字段?: string;
+    信任兼容默认值?: number;
+    欲望兼容默认值?: number;
+    移除字段?: string[];
+  },
+) {
+  return {
+    ..._.omit(data, options.移除字段 ?? []),
+    信任: 读取兼容关系数值(
+      data,
+      '信任',
+      options.信任默认值,
+      options.信任兼容字段,
+      options.信任兼容默认值 ?? options.信任默认值,
+    ),
+    欲望: 读取兼容关系数值(
+      data,
+      '欲望',
+      options.欲望默认值,
+      options.欲望兼容字段,
+      options.欲望兼容默认值 ?? options.欲望默认值,
+    ),
+  };
+}
 
 export const 当前路线 = 创建字符串标准化器('未定', {
   未开启: '未定',
@@ -260,12 +270,17 @@ export const 主角当前状态 = 创建枚举标准化器(主角当前状态值
   被拘束: '被关押',
 });
 
-export const 标准地点 = (初始值: string) => 创建字符串标准化器(初始值, 地点别名映射);
-export const 标准立场 = (初始值 = '中立') => 创建字符串标准化器(初始值, 当前立场别名映射);
+export const 标准地点 = (初始值: string) =>
+  z
+    .string()
+    .transform(input => {
+      const 文本 = 归一化文本(input);
+      const 归一值 = (地点别名映射[文本] ?? 文本) || 初始值;
+      return Object.values(地点别名映射).includes(归一值) ? 归一值 : 初始值;
+    })
+    .prefault(初始值);
 export const 标准态度 = (初始值 = '观察') => 创建字符串标准化器(初始值, 对user态度别名映射);
-export const 标准干涉状态 = (初始值 = '未介入') => 创建字符串标准化器(初始值, 美辻干涉状态别名映射);
 export const 标准轮回干涉状态 = (初始值 = '未确认') => 创建字符串标准化器(初始值, 美辻轮回干涉状态别名映射);
-export const 标准春神异状态 = (初始值 = '未激活') => 创建字符串标准化器(初始值, 春神异状态别名映射);
 
 export const 核心女角色结构 = z.object({
   当前所在地点: 标准地点('学生公寓'),
@@ -274,7 +289,6 @@ export const 核心女角色结构 = z.object({
   是否已独处: z.boolean().prefault(false),
   是否已亲密接触: z.boolean().prefault(false),
   是否已发生性关系: z.boolean().prefault(false),
-  深层关系阶段: 创建深层关系阶段(),
 });
 
 export const 轻量女角色结构 = z.object({
@@ -288,7 +302,6 @@ export const 关键男角色结构 = z.object({
   当前所在地点: 标准地点('村中食堂'),
   当前在场状态: 创建在场状态(),
   本轮功能身份: 创建角色功能身份(),
-  当前立场: 标准立场('中立'),
   对user态度: 标准态度('观察'),
   是否掌握关键情报: z.boolean().prefault(false),
 });
@@ -361,9 +374,20 @@ export const SchemaObject = z.object({
               当前所在地点: 标准地点('回末住处'),
               当前心里话: 创建字符串标准化器(''),
               好感: 数值百分比(10),
+              信任: 数值百分比(10),
+              欲望: 数值百分比(5),
               信赖: 数值百分比(10),
               色诱度: 数值百分比(5),
             })
+            .transform(data =>
+              统一女性关系字段(data, {
+                信任默认值: 10,
+                欲望默认值: 5,
+                信任兼容字段: '信赖',
+                欲望兼容字段: '色诱度',
+                移除字段: ['信赖', '色诱度'],
+              }),
+            )
             .prefault({}),
 
           马宫久子: 核心女角色结构
@@ -371,9 +395,20 @@ export const SchemaObject = z.object({
               当前所在地点: 标准地点('村中食堂'),
               当前心里话: 创建字符串标准化器(''),
               好感: 数值百分比(0),
+              信任: 数值百分比(10),
+              欲望: 数值百分比(5),
               合作度: 数值百分比(10),
               色气值: 数值百分比(5),
             })
+            .transform(data =>
+              统一女性关系字段(data, {
+                信任默认值: 10,
+                欲望默认值: 5,
+                信任兼容字段: '合作度',
+                欲望兼容字段: '色气值',
+                移除字段: ['合作度', '色气值'],
+              }),
+            )
             .prefault({}),
 
           织部香织: 核心女角色结构
@@ -381,9 +416,20 @@ export const SchemaObject = z.object({
               当前所在地点: 标准地点('村中食堂'),
               当前心里话: 创建字符串标准化器(''),
               好感: 数值百分比(0),
+              信任: 数值百分比(0),
+              欲望: 数值百分比(20),
               压抑值: 数值百分比(20),
               顺从度: 数值百分比(0),
             })
+            .transform(data =>
+              统一女性关系字段(data, {
+                信任默认值: 0,
+                欲望默认值: 20,
+                信任兼容字段: '顺从度',
+                欲望兼容字段: '压抑值',
+                移除字段: ['压抑值', '顺从度'],
+              }),
+            )
             .prefault({}),
 
           卷岛春: 核心女角色结构
@@ -391,10 +437,20 @@ export const SchemaObject = z.object({
               当前所在地点: 标准地点('学生公寓'),
               当前心里话: 创建字符串标准化器(''),
               好感: 数值百分比(0),
+              信任: 数值百分比(0),
+              欲望: 数值百分比(10),
               依赖: 数值百分比(0),
               异常值: 数值百分比(10),
-              是否已暴露异常面: z.boolean().prefault(false),
             })
+            .transform(data =>
+              统一女性关系字段(data, {
+                信任默认值: 0,
+                欲望默认值: 10,
+                信任兼容字段: '依赖',
+                欲望兼容字段: '异常值',
+                移除字段: ['依赖', '异常值'],
+              }),
+            )
             .prefault({}),
 
           咩子: 核心女角色结构
@@ -402,9 +458,19 @@ export const SchemaObject = z.object({
               当前所在地点: 标准地点('回末住处'),
               当前心里话: 创建字符串标准化器(''),
               好感: 数值百分比(0),
+              信任: 数值百分比(20),
+              欲望: 数值百分比(0),
               依赖: 数值百分比(20),
               特殊性: 创建字符串标准化器('关键角色'),
             })
+            .transform(data =>
+              统一女性关系字段(data, {
+                信任默认值: 20,
+                欲望默认值: 0,
+                信任兼容字段: '依赖',
+                移除字段: ['依赖', '特殊性'],
+              }),
+            )
             .prefault({}),
 
           山胁多惠: 轻量女角色结构
@@ -414,14 +480,14 @@ export const SchemaObject = z.object({
             })
             .prefault({}),
 
-          美佐峰美辻: z
-            .object({
+          美佐峰美辻: 核心女角色结构
+            .extend({
               当前所在地点: 标准地点('便利店'),
               当前心里话: 创建字符串标准化器(''),
-              当前在场状态: 创建在场状态(),
-              当前是否现身: z.boolean().prefault(false),
-              当前干涉状态: 标准干涉状态('未介入'),
-              是否已介入本轮: z.boolean().prefault(false),
+              当前在场状态: 创建在场状态('不可见'),
+              好感: 数值百分比(0),
+              信任: 数值百分比(0),
+              欲望: 数值百分比(0),
             })
             .prefault({}),
         })
@@ -433,7 +499,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('学生公寓'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('观察'),
               对user态度: 标准态度('审视'),
             })
             .prefault({}),
@@ -442,7 +507,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('村中食堂'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('暴躁'),
               对user态度: 标准态度('敌意'),
             })
             .prefault({}),
@@ -451,7 +515,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('学生公寓'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('摇摆'),
               对user态度: 标准态度('好奇'),
             })
             .prefault({}),
@@ -460,7 +523,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('村中食堂'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('中立'),
               对user态度: 标准态度('警惕'),
             })
             .prefault({}),
@@ -470,7 +532,6 @@ export const SchemaObject = z.object({
               当前所在地点: 标准地点('洋馆'),
               当前心里话: 创建字符串标准化器(''),
               当前在场状态: 创建在场状态('离场'),
-              当前立场: 标准立场('旁观'),
               对user态度: 标准态度('不耐烦'),
               是否掌握关键情报: z.boolean().prefault(true),
             })
@@ -480,7 +541,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('集会堂'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('保守'),
               对user态度: 标准态度('敌意'),
               是否掌握关键情报: z.boolean().prefault(true),
             })
@@ -490,7 +550,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('村外'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('诡异'),
               对user态度: 标准态度('不可测'),
               是否掌握关键情报: z.boolean().prefault(true),
             })
@@ -500,7 +559,6 @@ export const SchemaObject = z.object({
             .extend({
               当前所在地点: 标准地点('村中食堂'),
               当前心里话: 创建字符串标准化器(''),
-              当前立场: 标准立场('理性'),
               对user态度: 标准态度('观察'),
             })
             .prefault({}),
@@ -556,7 +614,6 @@ export const SchemaObject = z.object({
 
       神异连续: z
         .object({
-          春的神异状态: 标准春神异状态('未激活'),
           梦境稳定度: 数值百分比(100),
         })
         .prefault({}),

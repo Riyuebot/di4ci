@@ -2,57 +2,62 @@
 在场角色控制器: |-
   @@private
   <%_
-  const presentMessageId = typeof message_id !== 'undefined' ? message_id : -1;
-  const presentIsFirstMessage = presentMessageId === 0;
-  const presentCharacters = getvar('stat_data.场景.在场角色列表', { defaults: [] }) || [];
-  const banquetCharacters = getvar('stat_data.场景.当前宴会参与角色列表', { defaults: [] }) || [];
-  const presentNames = Array.from(new Set([...presentCharacters, ...banquetCharacters])).filter(Boolean);
-  const hasPresentCharacter = (...candidates) => candidates.some(name => presentNames.includes(name));
-  if (!presentIsFirstMessage) {
+  const yasumikiPresentMessageId = typeof message_id !== 'undefined' ? message_id : -1;
+  const yasumikiPresentIsFirstMessage = yasumikiPresentMessageId === 0;
+  const yasumikiPresentCharacters = getvar('stat_data.场景.在场角色列表', { defaults: [] }) || [];
+  const yasumikiPresentBanquetCharacters = getvar('stat_data.场景.当前宴会参与角色列表', { defaults: [] }) || [];
+  const yasumikiPresentNames = Array.from(
+    new Set([...yasumikiPresentCharacters, ...yasumikiPresentBanquetCharacters]),
+  ).filter(Boolean);
+  const hasYasumikiPresentCharacter = (...candidates) => candidates.some(name => yasumikiPresentNames.includes(name));
+  if (!yasumikiPresentIsFirstMessage) {
   _%>
-  <%_ if (hasPresentCharacter('芹泽千枝实')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('芹泽千枝实')) { _%>
   <%- await getwi('芹泽千枝实') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('回末李花子')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('回末李花子')) { _%>
   <%- await getwi('回末李花子') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('卷岛春')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('卷岛春')) { _%>
   <%- await getwi('卷岛春') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('马宫久子')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('马宫久子')) { _%>
   <%- await getwi('马宫久子') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('织部香织')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('织部香织')) { _%>
   <%- await getwi('织部香织') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('咩子')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('咩子')) { _%>
   <%- await getwi('咩子') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('织部泰长')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('美佐峰美辻')) { _%>
+  <%- await getwi('美佐峰美辻') %>
+  <%_ } _%>
+  <%_ if (hasYasumikiPresentCharacter('织部泰长')) { _%>
   <%- await getwi('织部泰长') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('织部义次')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('织部义次')) { _%>
   <%- await getwi('织部义次') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('酿田近望')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('酿田近望')) { _%>
   <%- await getwi('酿田近望') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('室匠')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('室匠')) { _%>
   <%- await getwi('室匠') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('能里清之介')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('能里清之介')) { _%>
   <%- await getwi('能里清之介') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('卷岛宽造')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('卷岛宽造')) { _%>
   <%- await getwi('卷岛宽造') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('狼爷爷')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('狼爷爷')) { _%>
   <%- await getwi('狼爷爷') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('桥本雄大')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('桥本雄大')) { _%>
   <%- await getwi('桥本雄大') %>
   <%_ } _%>
-  <%_ if (hasPresentCharacter('山胁多惠')) { _%>
+  <%_ if (hasYasumikiPresentCharacter('山胁多惠')) { _%>
   <%- await getwi('山胁多惠') %>
   <%_ } _%>
   <%_

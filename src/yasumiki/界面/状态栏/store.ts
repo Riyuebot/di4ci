@@ -1,7 +1,6 @@
 import { SchemaObject } from '@/yasumiki/schema';
-import { defineMvuDataStore } from '@util/mvu';
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 type CharacterRecord = {
   name: string;
@@ -99,108 +98,56 @@ function 是否跳过Latest补丁(messageId: number | null | undefined) {
   return true;
 }
 
-function applyDisplayPatch(data: Record<string, any>, operations: JsonPatchOperation[]) {
-  const result = _.cloneDeep(data) as Record<string, any>;
-
-  operations.forEach(operation => {
-    if (operation.op === 'replace' && operation.path) {
-      _.set(result, decodeJsonPointer(operation.path), operation.value);
-      return;
-    }
-
-    if (operation.op === 'delta' && operation.path) {
-      const path = decodeJsonPointer(operation.path);
-      const current = Number(_.get(result, path, 0));
-      _.set(result, path, current + Number(operation.value ?? 0));
-      return;
-    }
-
-    if (operation.op === 'insert' && operation.path) {
-      insertByPointer(result, operation.path, operation.value);
-      return;
-    }
-
-    if (operation.op === 'remove' && operation.path) {
-      removeByPointer(result, operation.path);
-      return;
-    }
-
-    if (operation.op === 'move' && operation.from && operation.to) {
-      moveByPointer(result, operation.from, operation.to);
-    }
-  });
-
-  return result;
+function 读取当前楼层变量选项(): VariableOption {
+  return {
+    type: 'message',
+    message_id: getCurrentMessageId(),
+  };
 }
-
-function reconcileScenePresence(data: Record<string, any>) {
-  const result = _.cloneDeep(data) as Record<string, any>;
-  const sceneLocation = (_.get(result, '场景.当前地点', '') as string).trim();
-  const presentList = (_.get(result, '场景.在场角色列表', []) as string[]).filter(Boolean);
-  const absentList = (_.get(result, '场景.缺席角色列表', []) as string[]).filter(Boolean);
-  const presentSet = new Set(presentList);
-
-  _.set(
-    result,
-    '场景.缺席角色列表',
-    absentList.filter(name => !presentSet.has(name)),
-  );
-
-  const female = _.get(result, '角色.女性角色', {}) as Record<string, Record<string, any>>;
-  const male = _.get(result, '角色.男性角色', {}) as Record<string, Record<string, any>>;
-
-  [...Object.entries(female), ...Object.entries(male)].forEach(([name, detail]) => {
-    if (!presentSet.has(name) || !_.isObject(detail)) return;
-
-    detail.当前在场状态 = '在场';
-    if (sceneLocation) {
-      detail.当前所在地点 = sceneLocation;
-    }
-  });
-
-  return result;
-}
-
-const useMvuStore = defineMvuDataStore(SchemaObject, { type: 'message', message_id: 'latest' });
 
 export const useDataStore = defineStore('yasumiki-status-bar', () => {
-  const mvuStore = useMvuStore();
-  const rawStatData = computed(() => mvuStore.data);
-  const latestAssistantMessage = computed(() => {
-    const messages = getChatMessages('0-{{lastMessageId}}', { role: 'assistant', include_swipes: true });
-    return (messages[messages.length - 1] ?? null) as Record<string, any> | null;
-  });
-  const latestAssistantMessageMeta = computed(() => {
-    const message = latestAssistantMessage.value;
-    if (!message) {
-      return { content: '', messageId: null as number | null };
+  const rawStatData = ref<Record<string, any>>(_.get(getVariables(读取当前楼层变量选项()), 'stat_data', {}));
+
+  function 同步当前楼层变量(nextRawStatData?: Record<string, any>) {
+    const variableOption = 读取当前楼层变量选项();
+    const currentRawStatData = nextRawStatData ?? _.get(getVariables(variableOption), 'stat_data', {});
+    const parsed = SchemaObject.safeParse(currentRawStatData);
+    const normalizedStatData = parsed.success ? parsed.data : currentRawStatData;
+
+    if (!_.isEqual(rawStatData.value, normalizedStatData)) {
+      rawStatData.value = normalizedStatData;
     }
 
-    const swipeId = _.get(message, 'swipe_id');
-    const swipes = _.get(message, 'swipes');
-    if (Array.isArray(swipes) && typeof swipeId === 'number' && typeof swipes[swipeId] === 'string') {
-      return {
-        content: swipes[swipeId] as string,
-        messageId: Number(_.get(message, 'message_id', _.get(message, 'mesid', null))),
-      };
+    if (parsed.success && !_.isEqual(currentRawStatData, parsed.data)) {
+      updateVariablesWith(variables => _.set(variables, 'stat_data', parsed.data), variableOption);
     }
+  }
 
-    return {
-      content: (_.get(message, 'message', '') as string) || '',
-      messageId: Number(_.get(message, 'message_id', _.get(message, 'mesid', null))),
-    };
+  同步当前楼层变量();
+
+  eventOn(Mvu.events.VARIABLE_INITIALIZED, variables => {
+    同步当前楼层变量(_.get(variables, 'stat_data', {}));
   });
-  const latestAssistantMessageContent = computed(() => latestAssistantMessageMeta.value.content);
-  const latestJsonPatch = computed(() =>
-    是否跳过Latest补丁(latestAssistantMessageMeta.value.messageId)
-      ? []
-      : parseLatestJsonPatch(latestAssistantMessageContent.value),
-  );
+
+  eventOn(Mvu.events.VARIABLE_UPDATE_ENDED, variables => {
+    同步当前楼层变量(_.get(variables, 'stat_data', {}));
+  });
+
+  eventOn(tavern_events.MESSAGE_UPDATED, () => {
+    同步当前楼层变量();
+  });
+
+  eventOn(tavern_events.MESSAGE_SWIPED, () => {
+    同步当前楼层变量();
+  });
+
+  useIntervalFn(() => {
+    同步当前楼层变量();
+  }, 10000);
+
   const statData = computed(() => {
-    const patched = applyDisplayPatch(rawStatData.value, latestJsonPatch.value);
-    const reconciled = reconcileScenePresence(patched);
-    const parsed = SchemaObject.safeParse(reconciled);
-    return parsed.success ? parsed.data : reconciled;
+    const parsed = SchemaObject.safeParse(rawStatData.value);
+    return parsed.success ? parsed.data : rawStatData.value;
   });
 
   const world = computed(() => statData.value.世界 ?? {});
@@ -240,7 +187,6 @@ export const useDataStore = defineStore('yasumiki-status-bar', () => {
     data: statData,
     statData,
     rawStatData,
-    latestJsonPatch,
     world,
     scene,
     banquet,
