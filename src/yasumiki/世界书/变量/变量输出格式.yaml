@@ -2,6 +2,8 @@
 变量输出格式:
   rule:
     - you must output the update analysis and the actual update commands at once in the end of the next reply
+    - every story-advancing assistant reply must end with exactly one `<UpdateVariable>...</UpdateVariable>` block; do not omit it
+    - if the reply enters or ends a formal banquet, you must update `/世界/是否处于宴会阶段`, `/场景/当前宴会参与角色列表`, `/宴会/当前阶段`, and `/宴会/票决结果` together instead of leaving banquet state half-written
     - the update commands works like the **JSON Patch (RFC 6902)** standard, must be a valid JSON array containing operation objects, but supports the following operations instead:
       - replace: replace the value of existing paths
       - delta: update the value of existing number paths by a delta value

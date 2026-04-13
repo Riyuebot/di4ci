@@ -3,6 +3,14 @@ import JSON5 from 'json5';
 import { jsonrepair } from 'jsonrepair';
 import { toDotPath } from 'zod/v4/core';
 
+export type JsonPatchOperation = {
+  op: 'replace' | 'delta' | 'insert' | 'remove' | 'move';
+  path?: string;
+  value?: any;
+  from?: string;
+  to?: string;
+};
+
 export function assignInplace<T>(destination: T[], new_array: T[]): T[] {
   destination.length = 0;
   destination.push(...new_array);
@@ -91,6 +99,110 @@ export function prettifyErrorWithInput(error: z.ZodError) {
 
 export function literalYamlify(value: any) {
   return YAML.stringify(value, { blockQuote: 'literal' });
+}
+
+export function decodeJsonPointer(path: string) {
+  return path
+    .split('/')
+    .slice(1)
+    .map(segment => segment.replaceAll('~1', '/').replaceAll('~0', '~'));
+}
+
+export function encodeJsonPointer(segments: string[]) {
+  return `/${segments.map(segment => segment.replaceAll('~', '~0').replaceAll('/', '~1')).join('/')}`;
+}
+
+export function removeByPointer(target: Record<string, any>, path: string) {
+  const segments = decodeJsonPointer(path);
+  const last = segments.pop();
+  if (last === undefined) return;
+
+  const parent = segments.length ? _.get(target, segments) : target;
+  if (Array.isArray(parent)) {
+    const index = Number(last);
+    if (!Number.isNaN(index)) parent.splice(index, 1);
+    return;
+  }
+
+  if (_.isObject(parent)) {
+    delete (parent as Record<string, any>)[last];
+  }
+}
+
+export function insertByPointer(target: Record<string, any>, path: string, value: any) {
+  const segments = decodeJsonPointer(path);
+  const last = segments.pop();
+  if (last === undefined) return;
+
+  const parent = segments.length ? _.get(target, segments) : target;
+  if (Array.isArray(parent)) {
+    if (last === '-') {
+      parent.push(value);
+      return;
+    }
+
+    const index = Number(last);
+    if (!Number.isNaN(index)) {
+      parent.splice(index, 0, value);
+    }
+    return;
+  }
+
+  _.set(target, [...segments, last], value);
+}
+
+export function moveByPointer(target: Record<string, any>, from: string, to: string) {
+  const value = _.get(target, decodeJsonPointer(from));
+  removeByPointer(target, from);
+  insertByPointer(target, to, value);
+}
+
+function parseJsonPatchOperationArray(content: string) {
+  const parsers = [
+    () => JSON.parse(content),
+    () => JSON5.parse(content),
+    () => JSON.parse(jsonrepair(content)),
+  ];
+
+  for (const parser of parsers) {
+    try {
+      const parsed = parser();
+      if (Array.isArray(parsed)) {
+        return parsed as JsonPatchOperation[];
+      }
+    } catch {
+      // continue trying the next parser
+    }
+  }
+
+  return [] as JsonPatchOperation[];
+}
+
+export function parseLatestJsonPatch(message: string) {
+  const matches = [...String(message ?? '').matchAll(/<JSONPatch>\s*([\s\S]*?)\s*<\/JSONPatch>/gi)];
+  for (let index = matches.length - 1; index >= 0; index -= 1) {
+    const parsed = parseJsonPatchOperationArray(matches[index][1]);
+    if (parsed.length > 0) {
+      return parsed;
+    }
+  }
+
+  return [] as JsonPatchOperation[];
+}
+
+export function normalizeAssistantMessageForMvuParsing(message: string) {
+  const source = String(message ?? '');
+  const withoutPlanningBlock = source.replace(/<konatan_planning~?>[\s\S]*?<\/konatan_planning~?>/gi, ' ');
+  const withoutTucaoBlock = withoutPlanningBlock.replace(/<tucao>[\s\S]*?<\/tucao>/gi, ' ');
+  const updateBlocks = [...withoutTucaoBlock.matchAll(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi)].map(match => match[0]);
+  const formalBlocks = updateBlocks.filter(block => /<JSONPatch>\s*[\s\S]*?<\/JSONPatch>/i.test(block));
+
+  if (formalBlocks.length === 0) {
+    return withoutTucaoBlock;
+  }
+
+  const narrativeOnly = withoutTucaoBlock.replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, ' ').trim();
+  return `${narrativeOnly}\n\n${formalBlocks[formalBlocks.length - 1]}`.trim();
 }
 
 export function parseString(content: string): any {

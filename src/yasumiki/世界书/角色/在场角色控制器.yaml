@@ -4,10 +4,10 @@
   <%_
   const yasumikiPresentMessageId = typeof message_id !== 'undefined' ? message_id : -1;
   const yasumikiPresentIsFirstMessage = yasumikiPresentMessageId === 0;
-  const yasumikiPresentCharacters = getvar('stat_data.场景.在场角色列表', { defaults: [] }) || [];
   const yasumikiPresentBanquetCharacters = getvar('stat_data.场景.当前宴会参与角色列表', { defaults: [] }) || [];
-  const yasumikiPresentNames = Array.from(
-    new Set([...yasumikiPresentCharacters, ...yasumikiPresentBanquetCharacters]),
+  const yasumikiPresentCharacters = getvar('stat_data.场景.在场角色列表', { defaults: [] }) || [];
+  const yasumikiPresentNames = (
+    yasumikiPresentBanquetCharacters.length > 0 ? yasumikiPresentBanquetCharacters : yasumikiPresentCharacters
   ).filter(Boolean);
   const hasYasumikiPresentCharacter = (...candidates) => candidates.some(name => yasumikiPresentNames.includes(name));
   if (!yasumikiPresentIsFirstMessage) {

@@ -12,7 +12,7 @@
           </div>
           <h2 class="hero-title">{{ world.当前章节 || '未定章节' }}</h2>
           <div class="hero-meta">
-            <span class="hero-route">{{ world.当前路线 || '未定路线' }}</span>
+            <span class="hero-route">{{ world.当前路线 || '未定' }}</span>
             <span class="hero-divider"></span>
             <span class="hero-loop">第 {{ world.当前轮回编号 || 1 }} 次轮回</span>
             <span class="hero-divider"></span>
@@ -321,37 +321,37 @@
 
           <section v-else-if="activeTab === 'clues'" key="clues" class="panel-section clue-grid">
             <div class="info-card wide">
-              <div class="card-title">永久解锁进度</div>
+              <div class="card-title">永久记忆进度</div>
               <div class="memory-merged-panel">
                 <div class="memory-summary-card">
                   <div class="memory-single-tab-main">
-                    <span class="memory-single-tab-title">永久进度</span>
+                    <span class="memory-single-tab-title">永久记忆</span>
                     <span class="memory-single-tab-summary">{{ memorySummaryText }}</span>
                   </div>
                   <div class="memory-summary-badges">
-                    <span class="memory-summary-badge">角色 Key {{ roleKeys.length }}</span>
-                    <span class="memory-summary-badge">真相 / 路线 {{ routeAndTruthKeys.length }}</span>
+                    <span class="memory-summary-badge">核心记忆点 {{ coreMemoryPoints.length }}</span>
+                    <span class="memory-summary-badge">已确认路线 {{ confirmedRoutes.length }}</span>
                   </div>
                 </div>
                 <div class="memory-detail-panel memory-detail-panel-expanded memory-detail-panel-merged">
                   <div class="memory-key-explainer-body">
-                    这些 Key 用来记录你已经拿到的核心真相、剧情节点和路线进度。
+                    这里记录的是你已经确认过的世界核心记忆点，以及当前轮回里真正成形的主线。
                   </div>
                   <div class="memory-key-list-panel">
-                    <div v-if="roleKeys.length" class="memory-key-list-group">
-                      <div class="memory-key-list-title">角色核心 Key</div>
+                    <div v-if="coreMemoryPoints.length" class="memory-key-list-group">
+                      <div class="memory-key-list-title">世界核心记忆点</div>
                       <div class="memory-key-list-tags">
-                        <span v-for="key in roleKeys" :key="key" class="memory-key-tag">{{ key }}</span>
+                        <span v-for="memory in coreMemoryPoints" :key="memory" class="memory-key-tag">{{ memory }}</span>
                       </div>
                     </div>
-                    <div v-if="routeAndTruthKeys.length" class="memory-key-list-group">
-                      <div class="memory-key-list-title">真相 / 路线 Key</div>
+                    <div v-if="confirmedRoutes.length" class="memory-key-list-group">
+                      <div class="memory-key-list-title">已确认路线</div>
                       <div class="memory-key-list-tags">
-                        <span v-for="key in routeAndTruthKeys" :key="key" class="memory-key-tag">{{ key }}</span>
+                        <span v-for="route in confirmedRoutes" :key="route" class="memory-key-tag">{{ route }}</span>
                       </div>
                     </div>
-                    <div v-if="!roleKeys.length && !routeAndTruthKeys.length" class="empty-text compact-memory-text">
-                      当前还没有已获得的剧情 Key
+                    <div v-if="!coreMemoryPoints.length && !confirmedRoutes.length" class="empty-text compact-memory-text">
+                      当前还没有确认过的核心记忆点
                     </div>
                   </div>
                 </div>
@@ -384,6 +384,10 @@
                     <span class="banquet-status-label">轮次</span>
                     <span class="banquet-status-value">{{ banquetRound }}</span>
                   </div>
+                  <div class="banquet-status-card">
+                    <span class="banquet-status-label">阶段</span>
+                    <span class="banquet-status-value">{{ banquetStage }}</span>
+                  </div>
                   <div class="banquet-status-card" :class="banquetOpenedToday ? 'is-opened' : 'is-idle'">
                     <span class="banquet-status-label">局势</span>
                     <span class="banquet-status-value">{{
@@ -392,10 +396,18 @@
                   </div>
                 </div>
 
-                <div v-if="feastList.length" class="key-section">
+                <div class="banquet-outcome-panel" :class="`outcome-${currentVictoryTone}`">
+                  <div class="banquet-outcome-head">
+                    <span class="banquet-outcome-label">当前胜负</span>
+                    <span class="banquet-outcome-badge">{{ currentVictoryStatus }}</span>
+                  </div>
+                  <div class="banquet-outcome-note">{{ currentVictoryDescription }}</div>
+                </div>
+
+                <div v-if="displayedFeastList.length" class="key-section">
                   <div class="key-subtitle">参与角色</div>
                   <div class="card-tags">
-                    <span v-for="name in feastList" :key="name" class="attribute-pill feast-pill">
+                    <span v-for="name in displayedFeastList" :key="name" class="attribute-pill feast-pill">
                       {{ name }}
                     </span>
                   </div>
@@ -419,6 +431,15 @@
                   </div>
                 </div>
 
+                <div v-if="voteResultItems.length" class="key-section">
+                  <div class="key-subtitle">票决结果</div>
+                  <div class="card-tags">
+                    <span v-for="item in voteResultItems" :key="item.label" class="attribute-pill truth-pill">
+                      {{ item.label }}：{{ item.value }}
+                    </span>
+                  </div>
+                </div>
+
                 <div v-if="identityAssignments.length" class="key-section">
                   <div class="key-subtitle">本轮身份分配</div>
                   <div class="card-tags">
@@ -428,9 +449,22 @@
                   </div>
                 </div>
 
+                <div v-if="nightActionList.length" class="key-section">
+                  <div class="key-subtitle">夜间行动记录</div>
+                  <div class="card-tags">
+                    <span v-for="item in nightActionList" :key="item.label" class="attribute-pill truth-pill">
+                      {{ item.label }}：{{ item.value }}
+                    </span>
+                  </div>
+                </div>
+
                 <div
                   v-if="
-                    !feastList.length && !suspicionList.length && !anomalyList.length && !identityAssignments.length
+                    !feastList.length &&
+                    !suspicionList.length &&
+                    !anomalyList.length &&
+                    !identityAssignments.length &&
+                    !nightActionList.length
                   "
                   class="empty-text"
                 >
@@ -491,12 +525,42 @@ import { useDataStore } from './store';
 
 type TabId = 'overview' | 'present' | 'clues' | 'banquet' | 'scene';
 type Attribute = { label: string; value: string | number | boolean };
+type SillyTavernNameContext = {
+  name1?: string;
+};
+type SillyTavernNameBridge = Window & {
+  SillyTavern?: {
+    getContext?: () => SillyTavernNameContext | null | undefined;
+  };
+};
 type AnyCharacter = {
   name: string;
   type: 'female' | 'male';
   detail: Record<string, any>;
 };
 type CharacterWithPresence = AnyCharacter & { isPresent: boolean };
+
+function 合并永久记忆(新结构: Record<string, any> = {}, 旧结构: Record<string, any> = {}) {
+  const 世界核心记忆点 = _.uniq([
+    ...(_.get(旧结构, '已获得角色核心Key列表', []) as string[]),
+    ...(_.get(旧结构, '已获得真相Key列表', []) as string[]),
+    ...(_.get(新结构, '已确认世界核心记忆点列表', []) as string[]),
+  ]);
+  const 路线列表 = _.uniq([
+    ...(_.get(旧结构, '已获得路线Key列表', []) as string[]),
+    ...(_.get(新结构, '已确认路线列表', []) as string[]),
+  ]);
+  const 主线层级 = Math.max(
+    Number(_.get(旧结构, '已解锁主线层级', 1)) || 1,
+    Number(_.get(新结构, '已解锁主线层级', 1)) || 1,
+  );
+
+  return {
+    已确认世界核心记忆点列表: 世界核心记忆点,
+    已确认路线列表: 路线列表,
+    已解锁主线层级: 主线层级,
+  };
+}
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'overview', label: '现世' },
@@ -511,19 +575,67 @@ const collapsed = ref(true);
 const selectedCharacter = ref<CharacterWithPresence | null>(null);
 
 const store = useDataStore();
-const world = computed(() => store.world ?? {});
-const scene = computed(() => store.scene ?? {});
-const banquet = computed(() => store.banquet ?? {});
-const permanentKeys = computed(() => store.permanentKeys ?? {});
-const crossLoop = computed(() => store.crossLoop ?? {});
+const statData = computed(() => (store.data ?? {}) as Record<string, any>);
+const world = computed(() => _.get(statData.value, '世界', {}) as Record<string, any>);
+const scene = computed(() => _.get(statData.value, '场景', {}) as Record<string, any>);
+const banquet = computed(() => _.get(statData.value, '宴会', {}) as Record<string, any>);
+const protagonist = computed(() => _.get(statData.value, '主角', {}) as Record<string, any>);
+const permanentMemory = computed(() =>
+  合并永久记忆(
+    _.get(statData.value, '永久记忆', {}) as Record<string, any>,
+    _.get(statData.value, '永久Key', {}) as Record<string, any>,
+  ),
+);
+const crossLoop = computed(() => _.get(statData.value, '跨轮残留', {}) as Record<string, any>);
+const femaleCharacters = computed(
+  () => _.get(statData.value, '角色.女性角色', {}) as Record<string, Record<string, any>>,
+);
+const maleCharacters = computed(
+  () => _.get(statData.value, '角色.男性角色', {}) as Record<string, Record<string, any>>,
+);
+function normalizeNameList(rawList: unknown) {
+  return _.uniq(
+    _.flattenDeep(Array.isArray(rawList) ? rawList : [rawList])
+      .map(item => String(item ?? '').trim())
+      .filter(Boolean),
+  );
+}
+const mergedCharacters = computed<CharacterWithPresence[]>(() => {
+  const presentNames = new Set<string>(normalizeNameList(_.get(scene.value, '在场角色列表', [])));
+  const female = Object.entries(femaleCharacters.value).map(([name, detail]) => ({
+    name,
+    type: 'female' as const,
+    detail: (detail ?? {}) as Record<string, any>,
+    isPresent: presentNames.has(name),
+  }));
+  const male = Object.entries(maleCharacters.value).map(([name, detail]) => ({
+    name,
+    type: 'male' as const,
+    detail: (detail ?? {}) as Record<string, any>,
+    isPresent: presentNames.has(name),
+  }));
+  return [...female, ...male];
+});
+function 获取当前酒馆主角显示名() {
+  try {
+    const target = (window.parent ?? window) as SillyTavernNameBridge;
+    const ctx = target.SillyTavern?.getContext?.();
+    const name = String(ctx?.name1 ?? '').trim();
+    if (name) return name;
+  } catch {
+    // ignore
+  }
+  return '主角';
+}
+
+const protagonistDisplayName = computed(() => 获取当前酒馆主角显示名());
 const displayClock = computed(() => {
   const phase = _.get(world.value, '当前时间段', '未知时段');
   const time = _.get(world.value, '当前时刻', '??:??');
   return `${time} · ${phase}`;
 });
-const protagonist = computed(() => store.protagonist ?? ({} as Record<string, any>));
 const allCharacterList = computed<CharacterWithPresence[]>(() =>
-  (store.mergedCharacters ?? [])
+  mergedCharacters.value
     .map((char, index) => ({ char, index }))
     .sort((left, right) => Number(right.char.isPresent) - Number(left.char.isPresent) || left.index - right.index)
     .map(({ char }) => char),
@@ -570,6 +682,7 @@ const currentCharacter = computed<CharacterWithPresence | null>(() => {
 });
 
 function getRosterShortName(name: string) {
+  if (name === 'user') return protagonistDisplayName.value;
   return rosterShortNameMap.value[name] ?? name;
 }
 
@@ -587,23 +700,30 @@ function toggleCharacterDetail(char: CharacterWithPresence) {
 
   selectedCharacter.value = char;
 }
-const feastList = computed<string[]>(() => _.get(scene.value, '当前宴会参与角色列表', []));
-const roleKeys = computed(() => _.get(permanentKeys.value, '已获得角色核心Key列表', []) as string[]);
-const routeAndTruthKeys = computed(() => {
-  const routeKeys = _.get(permanentKeys.value, '已获得路线Key列表', []) as string[];
-  const truthKeys = _.get(permanentKeys.value, '已获得真相Key列表', []) as string[];
-  return [...routeKeys, ...truthKeys];
+const feastList = computed<string[]>(() => normalizeNameList(_.get(scene.value, '当前宴会参与角色列表', [])));
+const displayedFeastList = computed<string[]>(() =>
+  feastList.value.map(name => (name === 'user' ? protagonistDisplayName.value : name)),
+);
+const coreMemoryPoints = computed(() => _.get(permanentMemory.value, '已确认世界核心记忆点列表', []) as string[]);
+const confirmedRoutes = computed(() => _.get(permanentMemory.value, '已确认路线列表', []) as string[]);
+const combinedMemoryText = computed(() => {
+  const pointsText = coreMemoryPoints.value.length ? `${coreMemoryPoints.value.length} 项` : '暂无';
+  const routesText = confirmedRoutes.value.length ? confirmedRoutes.value.join('、') : '未定';
+  return `记忆点：${pointsText}｜路线：${routesText}`;
 });
-const combinedKeyText = computed(() => {
-  const keys = [...roleKeys.value, ...routeAndTruthKeys.value];
-  return keys.length ? keys.join('、') : '暂无';
-});
-const mainStoryLevel = computed(() => _.get(permanentKeys.value, '已解锁主线层级', _.get(world.value, '主线层级', 1)));
+const mainStoryLevel = computed(() => _.get(permanentMemory.value, '已解锁主线层级', _.get(world.value, '主线层级', 1)));
 const memorySummaryText = computed(() => {
-  const segments = [`剧情 Key：${combinedKeyText.value}`];
+  const segments = [combinedMemoryText.value];
   return segments.join('｜');
 });
-const identityBlessing = computed(() => _.get(protagonist.value, '本轮功能身份', '未分配'));
+const protagonistIdentityKnown = computed(() => _.get(protagonist.value, '是否已知晓身份', false));
+const protagonistTrueIdentity = computed(() => String(_.get(protagonist.value, '本轮功能身份', '村民') ?? '村民').trim() || '村民');
+const identityBlessing = computed(() =>
+  getDisplayedIdentity(protagonistTrueIdentity.value, {
+    isProtagonist: true,
+    protagonistKnown: protagonistIdentityKnown.value,
+  }),
+);
 const identityCamp = computed(() => _.get(protagonist.value, '当前阵营', '未知'));
 const identityStatus = computed(() => _.get(protagonist.value, '当前状态', '清醒'));
 const dreamStabilityPercent = computed(() => _.get(crossLoop.value, '神异连续.梦境稳定度', 100));
@@ -667,8 +787,44 @@ function getResidualRelationValue(name: string) {
 }
 const banquetRound = computed(() => _.get(banquet.value, '当前宴会轮次', 0));
 const banquetOpenedToday = computed(() => _.get(banquet.value, '今日是否已召开宴会', false));
+const banquetStage = computed(() => String(_.get(banquet.value, '当前阶段', '未开始') ?? '未开始').trim() || '未开始');
 const suspicionList = computed(() => _.get(banquet.value, '当前怀疑焦点', []) as string[]);
 const anomalyList = computed(() => _.get(banquet.value, '今日异常事件列表', []) as string[]);
+const voteResultItems = computed(() => {
+  const vote = _.get(banquet.value, '票决结果', {}) as Record<string, any>;
+  const items: Array<{ label: string; value: string }> = [];
+  const done = Boolean(_.get(vote, '是否完成', false));
+  const targetRaw = String(_.get(vote, '票出对象', '') ?? '').trim();
+  const outcome = String(_.get(vote, '处置结果', '') ?? '').trim();
+  const summary = String(_.get(vote, '结果说明', '') ?? '').trim();
+  const target = targetRaw === 'user' ? protagonistDisplayName.value : targetRaw;
+
+  if (done) {
+    items.push({ label: '已完成', value: '是' });
+  }
+  if (target) {
+    items.push({ label: '票出对象', value: target });
+  }
+  if (outcome) {
+    items.push({ label: '处置结果', value: outcome });
+  }
+  if (summary) {
+    items.push({ label: '结果说明', value: summary });
+  }
+
+  return items;
+});
+const currentVictoryStatus = computed(() => _.get(banquet.value, '当前胜负状态', '未分出'));
+const currentVictoryDescription = computed(() => {
+  const text = String(_.get(banquet.value, '当前胜负说明', '') ?? '').trim();
+  if (text) return text;
+  return '村民和蛇、猿、乌鸦、蜘蛛是同一阵营。狼和貉是同一阵营。';
+});
+const currentVictoryTone = computed(() => {
+  if (currentVictoryStatus.value === '人类胜利') return 'human';
+  if (currentVictoryStatus.value === '狼胜利') return 'wolf';
+  return 'pending';
+});
 type GeoLocationTone = 'abyss' | 'village' | 'forbidden' | 'banquet';
 type GeoLocationCard = {
   name: string;
@@ -687,8 +843,52 @@ const geoLocationCards = computed<GeoLocationCard[]>(() => [
   { name: '休水村落小道', tone: 'forbidden' },
 ]);
 const identityAssignments = computed(() => {
-  const record = _.get(banquet.value, '本轮身份分配表', {}) as Record<string, string>;
-  return Object.entries(record).map(([label, value]) => ({ label, value }));
+  return [
+    {
+      label: protagonistDisplayName.value,
+      value: identityBlessing.value,
+    },
+  ];
+});
+const nightActionList = computed(() => {
+  const record = _.get(banquet.value, '夜间行动记录', {}) as Record<string, string>;
+  const items: Array<{ label: string; value: string }> = [];
+  const protagonistRole = protagonistIdentityKnown.value ? protagonistTrueIdentity.value : '村民';
+
+  const wolfTarget = String(_.get(record, '狼目标', '') ?? '').trim();
+  const wolfExecutor = String(_.get(record, '狼执行者', '') ?? '').trim();
+  const snakeTarget = String(_.get(record, '蛇查验目标', '') ?? '').trim();
+  const snakeResult = String(_.get(record, '蛇查验结果', '') ?? '').trim();
+  const spiderTarget = String(_.get(record, '蜘蛛守护目标', '') ?? '').trim();
+  const crowTarget = String(_.get(record, '乌鸦验明对象', '') ?? '').trim();
+  const crowResult = String(_.get(record, '乌鸦验明结果', '') ?? '').trim();
+
+  if (protagonistRole === '狼' && wolfTarget) {
+    items.push({
+      label: '狼昨夜目标',
+      value: wolfExecutor ? `${wolfTarget}（执行者：${wolfExecutor}）` : wolfTarget,
+    });
+  }
+  if (protagonistRole === '蛇' && snakeTarget) {
+    items.push({
+      label: '蛇昨夜查验',
+      value: snakeResult ? `${snakeTarget}（${snakeResult}）` : snakeTarget,
+    });
+  }
+  if (protagonistRole === '蜘蛛' && spiderTarget) {
+    items.push({
+      label: '蜘蛛昨夜守护',
+      value: spiderTarget,
+    });
+  }
+  if (protagonistRole === '乌鸦' && crowTarget) {
+    items.push({
+      label: '乌鸦验明',
+      value: crowResult ? `${crowTarget}（${crowResult}）` : crowTarget,
+    });
+  }
+
+  return items;
 });
 
 type PortraitFaceId = 'normal' | 'nsfw';
@@ -719,8 +919,22 @@ function getLocationText(detail: Record<string, any>) {
   return detail.当前所在地点 ?? '未知';
 }
 
+function getDisplayedIdentity(
+  identity: unknown,
+  options: {
+    isProtagonist?: boolean;
+    protagonistKnown?: boolean;
+  } = {},
+) {
+  const normalized = String(identity ?? '').trim() || '村民';
+  if (normalized === '未分配') return '村民';
+  if (normalized !== '村民') return normalized;
+  if (options.isProtagonist && options.protagonistKnown === false) return '未知';
+  return '村民';
+}
+
 function getRoleText(detail: Record<string, any>) {
-  return detail.本轮功能身份 ?? '未分配';
+  return getDisplayedIdentity(detail.本轮功能身份);
 }
 
 function getAvatarText(name: string) {
@@ -1948,6 +2162,8 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 .scene-banquet-card {
   position: relative;
   overflow: hidden;
+  padding: 20px 22px;
+  border-radius: 24px;
 }
 
 .scene-banquet-card::before {
@@ -1963,36 +2179,41 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .scene-banquet-section .card-title {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   color: #d7c089;
-  letter-spacing: 0.16em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
 }
 
 .scene-banquet-head {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
 .scene-banquet-subtitle {
-  font-size: 11px;
-  color: #b6a3ab;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ccb9c1;
 }
 
 .scene-banquet-state-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 0 12px;
+  justify-content: center;
+  min-width: 96px;
+  min-height: 38px;
+  padding: 0 16px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
 }
 
 .scene-banquet-state-badge.is-opened {
@@ -2008,14 +2229,16 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .scene-banquet-card .card-tags {
-  gap: 8px;
+  gap: 10px 12px;
+  margin-top: 0;
 }
 
 .banquet-status-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 14px;
   align-items: stretch;
+  margin-bottom: 6px;
 }
 
 .banquet-status-card {
@@ -2025,10 +2248,10 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 6px;
-  min-height: 66px;
-  padding: 10px 12px;
-  border-radius: 16px;
+  gap: 8px;
+  min-height: 84px;
+  padding: 16px 18px;
+  border-radius: 18px;
   border: 1px solid rgba(212, 175, 55, 0.14);
   background: linear-gradient(180deg, rgba(56, 42, 31, 0.42) 0%, rgba(38, 29, 33, 0.7) 100%);
   box-shadow:
@@ -2051,15 +2274,15 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 }
 
 .banquet-status-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #b9a8a0;
+  letter-spacing: 0.16em;
+  color: #c8b8af;
 }
 
 .banquet-status-value {
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 18px;
+  line-height: 1.35;
   font-weight: 700;
   color: #f2e6c2;
 }
@@ -2068,8 +2291,87 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   color: #e8d8de;
 }
 
+.banquet-outcome-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.015) 100%),
+    rgba(30, 24, 29, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 14px 24px -24px rgba(0, 0, 0, 0.45);
+}
+
+.banquet-outcome-panel.outcome-human {
+  border-color: rgba(212, 175, 55, 0.2);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0) 34%),
+    linear-gradient(180deg, rgba(64, 49, 30, 0.46) 0%, rgba(33, 26, 29, 0.72) 100%);
+}
+
+.banquet-outcome-panel.outcome-wolf {
+  border-color: rgba(224, 90, 114, 0.22);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(224, 90, 114, 0.1) 0%, rgba(224, 90, 114, 0) 34%),
+    linear-gradient(180deg, rgba(61, 37, 42, 0.52) 0%, rgba(33, 25, 29, 0.74) 100%);
+}
+
+.banquet-outcome-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.banquet-outcome-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #c9b8bf;
+}
+
+.banquet-outcome-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f7efe1;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.banquet-outcome-panel.outcome-human .banquet-outcome-badge {
+  border-color: rgba(212, 175, 55, 0.22);
+  background: rgba(212, 175, 55, 0.1);
+  color: #f2e1a7;
+}
+
+.banquet-outcome-panel.outcome-wolf .banquet-outcome-badge {
+  border-color: rgba(224, 90, 114, 0.26);
+  background: rgba(224, 90, 114, 0.1);
+  color: #ffd7e0;
+}
+
+.banquet-outcome-note {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #dfd1d6;
+}
+
 .scene-banquet-card .feast-pill {
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: 999px;
   background: rgba(168, 121, 255, 0.16);
   border-color: rgba(168, 121, 255, 0.26);
@@ -2125,7 +2427,7 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 .key-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .key-subtitle {
@@ -2133,6 +2435,39 @@ function getAttributes(char: AnyCharacter): Attribute[] {
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #c8b8bf;
+}
+
+.scene-banquet-card .key-section {
+  position: relative;
+  z-index: 1;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%),
+    rgba(31, 24, 31, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.scene-banquet-card .key-subtitle {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: #efe2b2;
+}
+
+.scene-banquet-card .attribute-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 700;
+  white-space: normal;
+  word-break: break-word;
+  box-shadow: 0 12px 20px -20px rgba(212, 175, 55, 0.35);
 }
 
 .key-pill {
@@ -3215,6 +3550,77 @@ function getAttributes(char: AnyCharacter): Attribute[] {
 
   .section-tip {
     font-size: 10px;
+  }
+
+  .scene-banquet-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .scene-banquet-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .scene-banquet-subtitle {
+    font-size: 12px;
+  }
+
+  .scene-banquet-state-badge {
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 10px;
+  }
+
+  .banquet-status-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .banquet-status-card {
+    min-height: 76px;
+    padding: 14px 15px;
+  }
+
+  .banquet-status-value {
+    font-size: 16px;
+  }
+
+  .banquet-outcome-panel {
+    gap: 8px;
+    padding: 14px 15px;
+  }
+
+  .banquet-outcome-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .banquet-outcome-badge {
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 11px;
+  }
+
+  .banquet-outcome-note {
+    font-size: 12px;
+  }
+
+  .scene-banquet-card .key-section {
+    padding: 12px 13px;
+    border-radius: 16px;
+  }
+
+  .scene-banquet-card .key-subtitle {
+    font-size: 12px;
+  }
+
+  .scene-banquet-card .attribute-pill {
+    min-height: 32px;
+    padding: 7px 10px;
+    font-size: 11px;
   }
 }
 

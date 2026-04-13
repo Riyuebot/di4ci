@@ -1,0 +1,84 @@
+---
+主角夜间行动引导: |-
+  @@private
+  <%_
+  const yasumikiNightRole = String(getvar('stat_data.主角.本轮功能身份', { defaults: '村民' }) || '村民').trim();
+  const yasumikiLockedRole = String(getvar('stat_data.宴会.本轮身份分配表.主角', { defaults: '村民' }) || '村民').trim();
+  const yasumikiNightKnown = !!getvar('stat_data.主角.是否已知晓身份', { defaults: false });
+  const yasumikiNightSegment = String(getvar('stat_data.世界.当前时间段', { defaults: '白天' }) || '白天').trim();
+  const yasumikiNightPrepared = !!getvar('stat_data.主角.是否完成宴前准备', { defaults: false });
+  const yasumikiNightBanquet = getvar('stat_data.场景.当前宴会参与角色列表', { defaults: [] }) || [];
+  const yasumikiNightPresent = getvar('stat_data.场景.在场角色列表', { defaults: [] }) || [];
+  const yasumikiNightIdentityTable = getvar('stat_data.宴会.本轮身份分配表', { defaults: {} }) || {};
+  const yasumikiNightFemale = getvar('stat_data.角色.女性角色', { defaults: {} }) || {};
+  const yasumikiNightMale = getvar('stat_data.角色.男性角色', { defaults: {} }) || {};
+  const yasumikiNightSpecialMissing = new Set(['不可见', '神隐中', '被隔离', '被关押']);
+  const yasumikiNightSource = yasumikiNightBanquet.length > 0 ? yasumikiNightBanquet : yasumikiNightPresent;
+  const yasumikiNightCandidates = Array.from(new Set(yasumikiNightSource))
+    .filter(name => name && name !== 'user' && name !== '主角')
+    .filter(name => {
+      const detail = yasumikiNightFemale[name] || yasumikiNightMale[name] || {};
+      const status = String(detail['当前在场状态'] || '').trim();
+      return !yasumikiNightSpecialMissing.has(status);
+    });
+  const yasumikiNightWolfPartners = Object.entries(yasumikiNightIdentityTable)
+    .filter(([name, role]) => name && name !== 'user' && name !== '主角' && String(role || '').trim() === '狼')
+    .map(([name]) => name);
+  const yasumikiNightNeedsAction =
+    yasumikiNightKnown &&
+    yasumikiNightPrepared &&
+    (yasumikiNightSegment === '夜间' || yasumikiNightSegment === '雾夜') &&
+    ['狼', '蛇', '蜘蛛'].includes(yasumikiNightRole);
+  if (yasumikiLockedRole !== '村民') {
+  _%>
+  本轮主角真实身份锁定:
+    - 后台真实身份：<%= yasumikiLockedRole %>
+    - 这是本轮已经锁定好的真实身份。正文、UpdateVariable、变量说明、状态相关描写，都不能把主角写成别的身份。
+    - 如果当前 `是否已知晓身份 = false`，那就先别在正文里明说，只把这个身份当后台约束，不要提前摊牌。
+    - 如果当前 `是否已知晓身份 = true`，那就必须按这个真实身份继续写，不能再写成普通村民、村民，或别的神职。
+  <%_
+  }
+  const yasumikiNightNeedsRoleReminder =
+    yasumikiNightKnown &&
+    yasumikiNightPrepared &&
+    (yasumikiNightSegment === '夜间' || yasumikiNightSegment === '雾夜') &&
+    yasumikiNightRole !== '村民';
+  if (yasumikiNightNeedsRoleReminder) {
+  _%>
+  今夜主角身份提醒:
+    - 当前主角身份：<%= yasumikiNightRole %>
+    - 既然身份已经确认，就不要把主角写成普通村民、平民、村民，或临时编成别的身份。
+    <%_ if (yasumikiNightRole === '乌鸦') { _%>
+    - 乌鸦：今夜没有查活人的主动行动。它真正派上用场，是次日去确认前一天被票下悬崖的人到底是不是狼。
+    - 这一夜可以写主角带着“自己是乌鸦”的自觉去观察、忍耐、记事，但不要突然编出蛇或蜘蛛的能力。
+    <%_ } else if (yasumikiNightRole === '猿') { _%>
+    - 猿：今夜没有主动技能，但主角知道自己是猿，也知道场上还有另一只猿。不要把主角写回普通村民。
+    <%_ } else if (yasumikiNightRole === '貉') { _%>
+    - 貉：它算狼这边，但不等于普通狼。夜里也不会和狼自动碰头，不要写成三狼公开会合。
+    <%_ } _%>
+  <%_
+  }
+  if (yasumikiNightNeedsAction) {
+  _%>
+  今夜主角行动引导:
+    - 当前主角身份：<%= yasumikiNightRole %>
+    - 这一夜必须先给主角明确的行动引导，再决定结果。
+    - 在玩家没有明确选择之前，不要直接跳到天亮，不要先写昨夜谁出事。
+    - 今夜可优先考虑的人：<%= yasumikiNightCandidates.join('、') || '暂无可选对象' %>
+    <%_ if (yasumikiNightRole === '狼') { _%>
+    - 狼：本轮会和主角碰头的另外两头狼是：<%= yasumikiNightWolfPartners.join('、') || '暂无已锁定同类' %>。
+    - 只能把这份名单里的角色写成今夜和主角会合的狼同类，不要临时把别的人写成狼，也不要正文一套、变量一套。
+    - 如果这份名单暂时为空，就先写主角自己判断、等待或追查，不要硬编出狼同类会合。
+    - 先写这两头狼与主角的会合、试探或商量，再让主角决定今晚盯谁、要不要亲自去、准备怎么动手。
+    - 若这一夜没有明确写出狼最终选中的目标，就不要直接结算次日死者。
+    - 若蜘蛛守中了狼的目标，就要明确写成这一夜扑空或处理失败，不要照样死人。
+    <%_ } else if (yasumikiNightRole === '蛇') { _%>
+    - 蛇：先让主角明确今晚要查谁，再给出查验结果；不要直接略过这一步。
+    - 查验结果必须是准的，只能是“是狼”或“不是狼”。
+    <%_ } else if (yasumikiNightRole === '蜘蛛') { _%>
+    - 蜘蛛：先让主角明确今晚要护谁，再进入夜里的等待与结果。
+    - 如果守中了狼真正的目标，次日必须能对得上“本该出事但被保住”这一结果。
+    <%_ } _%>
+  <%_
+  }
+  _%>

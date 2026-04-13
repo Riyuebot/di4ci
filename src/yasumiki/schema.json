@@ -54,23 +54,17 @@
         "在场角色列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "缺席角色列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "当前宴会参与角色列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         }
       }
     },
@@ -84,18 +78,36 @@
         "今日是否已召开宴会": {
           "type": "boolean"
         },
+        "当前阶段": {
+          "default": "未开始",
+          "type": "string"
+        },
         "当前怀疑焦点": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "今日异常事件列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
+          "items": {}
+        },
+        "票决结果": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "是否完成": {
+              "type": "boolean"
+            },
+            "票出对象": {
+              "type": "string"
+            },
+            "处置结果": {
+              "type": "string"
+            },
+            "结果说明": {
+              "type": "string"
+            }
           }
         },
         "本轮身份分配表": {
@@ -106,6 +118,103 @@
           },
           "additionalProperties": {
             "type": "string"
+          }
+        },
+        "身份分配锁定轮回编号": {
+          "type": "number"
+        },
+        "当前胜负状态": {
+          "default": "未分出",
+          "type": "string"
+        },
+        "当前胜负说明": {
+          "type": "string"
+        },
+        "夜间行动记录": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "狼目标": {
+              "type": "string"
+            },
+            "狼执行者": {
+              "type": "string"
+            },
+            "蛇查验目标": {
+              "type": "string"
+            },
+            "蛇查验结果": {
+              "type": "string"
+            },
+            "蜘蛛守护目标": {
+              "type": "string"
+            },
+            "乌鸦验明对象": {
+              "type": "string"
+            },
+            "乌鸦验明结果": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "生存": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "角色存活状态": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "芹泽千枝实": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "回末李花子": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "马宫久子": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "织部香织": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "卷岛春": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "咩子": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "山胁多惠": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "美佐峰美辻": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "织部泰长": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "织部义次": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "酿田近望": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "室匠": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "能里清之介": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "卷岛宽造": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "狼爷爷": {
+              "$ref": "#/$defs/__schema0"
+            },
+            "桥本雄大": {
+              "$ref": "#/$defs/__schema0"
+            }
           }
         }
       }
@@ -123,7 +232,7 @@
           "type": "string"
         },
         "本轮功能身份": {
-          "default": "未分配",
+          "default": "村民",
           "type": "string"
         },
         "当前阵营": {
@@ -159,19 +268,19 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
-                },
-                "本轮功能身份": {
                   "$ref": "#/$defs/__schema1"
                 },
-                "是否已独处": {
+                "本轮功能身份": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -198,19 +307,19 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
-                },
-                "本轮功能身份": {
                   "$ref": "#/$defs/__schema1"
                 },
-                "是否已独处": {
+                "本轮功能身份": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -246,19 +355,19 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
-                },
-                "本轮功能身份": {
                   "$ref": "#/$defs/__schema1"
                 },
-                "是否已独处": {
+                "本轮功能身份": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -293,19 +402,19 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
-                },
-                "本轮功能身份": {
                   "$ref": "#/$defs/__schema1"
                 },
-                "是否已独处": {
+                "本轮功能身份": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -338,19 +447,19 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
-                },
-                "本轮功能身份": {
                   "$ref": "#/$defs/__schema1"
                 },
-                "是否已独处": {
+                "本轮功能身份": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -383,19 +492,19 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema0"
-                },
-                "本轮功能身份": {
                   "$ref": "#/$defs/__schema1"
                 },
-                "是否已独处": {
+                "本轮功能身份": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -433,7 +542,7 @@
                   "type": "string"
                 },
                 "本轮功能身份": {
-                  "default": "未分配",
+                  "default": "村民",
                   "type": "string"
                 },
                 "好感": {
@@ -457,16 +566,16 @@
                   "type": "string"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema1"
-                },
-                "是否已独处": {
                   "$ref": "#/$defs/__schema2"
                 },
-                "是否已亲密接触": {
+                "是否已独处": {
                   "$ref": "#/$defs/__schema3"
                 },
-                "是否已发生性关系": {
+                "是否已亲密接触": {
                   "$ref": "#/$defs/__schema4"
+                },
+                "是否已发生性关系": {
+                  "$ref": "#/$defs/__schema5"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -497,17 +606,17 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "审视",
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema7"
+                  "$ref": "#/$defs/__schema8"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -523,17 +632,17 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "敌意",
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema7"
+                  "$ref": "#/$defs/__schema8"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -549,17 +658,17 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "好奇",
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema7"
+                  "$ref": "#/$defs/__schema8"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -575,17 +684,17 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "警惕",
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema7"
+                  "$ref": "#/$defs/__schema8"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -605,7 +714,7 @@
                   "type": "string"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "不耐烦",
@@ -629,10 +738,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "敌意",
@@ -656,10 +765,10 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "不可测",
@@ -683,17 +792,17 @@
                   "type": "string"
                 },
                 "当前在场状态": {
-                  "$ref": "#/$defs/__schema5"
+                  "$ref": "#/$defs/__schema6"
                 },
                 "本轮功能身份": {
-                  "$ref": "#/$defs/__schema6"
+                  "$ref": "#/$defs/__schema7"
                 },
                 "对user态度": {
                   "default": "观察",
                   "type": "string"
                 },
                 "是否掌握关键情报": {
-                  "$ref": "#/$defs/__schema7"
+                  "$ref": "#/$defs/__schema8"
                 },
                 "当前心里话": {
                   "type": "string"
@@ -711,23 +820,37 @@
         "已解锁线索列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "已解锁真相列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "已触发线索回收节点列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
+        }
+      }
+    },
+    "永久记忆": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "已确认世界核心记忆点列表": {
+          "default": [],
+          "type": "array",
+          "items": {}
+        },
+        "已确认路线列表": {
+          "default": [],
+          "type": "array",
+          "items": {}
+        },
+        "已解锁主线层级": {
+          "default": 1,
+          "type": "number"
         }
       }
     },
@@ -738,23 +861,17 @@
         "已获得真相Key列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "已获得角色核心Key列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "已获得路线Key列表": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         },
         "已解锁主线层级": {
           "default": 1,
@@ -763,9 +880,7 @@
         "已解锁角色深层路线": {
           "default": [],
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": {}
         }
       }
     },
@@ -806,10 +921,6 @@
             },
             "千枝实轮回记忆清晰度": {
               "type": "number"
-            },
-            "美辻轮回干涉状态": {
-              "default": "未确认",
-              "type": "string"
             }
           }
         },
@@ -828,15 +939,16 @@
   },
   "$defs": {
     "__schema0": {
-      "default": "在场",
+      "default": "存活",
       "type": "string"
     },
     "__schema1": {
-      "default": "未分配",
+      "default": "在场",
       "type": "string"
     },
     "__schema2": {
-      "type": "boolean"
+      "default": "村民",
+      "type": "string"
     },
     "__schema3": {
       "type": "boolean"
@@ -845,14 +957,17 @@
       "type": "boolean"
     },
     "__schema5": {
+      "type": "boolean"
+    },
+    "__schema6": {
       "default": "在场",
       "type": "string"
     },
-    "__schema6": {
-      "default": "未分配",
+    "__schema7": {
+      "default": "村民",
       "type": "string"
     },
-    "__schema7": {
+    "__schema8": {
       "type": "boolean"
     }
   }
