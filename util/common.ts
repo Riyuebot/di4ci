@@ -3,6 +3,7 @@ import JSON5 from 'json5';
 import { jsonrepair } from 'jsonrepair';
 import { toDotPath } from 'zod/v4/core';
 
+<<<<<<< HEAD
 export type JsonPatchOperation = {
   op: 'replace' | 'delta' | 'insert' | 'remove' | 'move';
   path?: string;
@@ -11,6 +12,8 @@ export type JsonPatchOperation = {
   to?: string;
 };
 
+=======
+>>>>>>> 098e1f6e4ff8f2f726c3a97ca746d13033a2c842
 export function assignInplace<T>(destination: T[], new_array: T[]): T[] {
   destination.length = 0;
   destination.push(...new_array);
@@ -101,6 +104,7 @@ export function literalYamlify(value: any) {
   return YAML.stringify(value, { blockQuote: 'literal' });
 }
 
+<<<<<<< HEAD
 export function decodeJsonPointer(path: string) {
   return path
     .split('/')
@@ -205,6 +209,8 @@ export function normalizeAssistantMessageForMvuParsing(message: string) {
   return `${narrativeOnly}\n\n${formalBlocks[formalBlocks.length - 1]}`.trim();
 }
 
+=======
+>>>>>>> 098e1f6e4ff8f2f726c3a97ca746d13033a2c842
 export function parseString(content: string): any {
   const json_first = /^[[{]/s.test(content.trimStart());
   try {
